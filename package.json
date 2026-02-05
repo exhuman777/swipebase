@@ -1,0 +1,12 @@
+{
+  "name": "swipebase",
+  "version": "1.0.0",
+  "description": "Swipe through any data - Tinder-style review UI for datasets",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve . -p 3000"
+  },
+  "keywords": ["swipe", "data-review", "tinder-ui", "csv", "json"],
+  "author": "exhuman777",
+  "license": "MIT"
+}

@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SwipeBase - Swipe Through Any Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-0: #000000;
+            --bg-1: #0a0a0a;
+            --bg-2: #111111;
+            --bg-3: #1a1a1a;
+            --bg-4: #222222;
+            --bg-5: #2a2a2a;
+            --border: #333333;
+            --border-light: #444444;
+            --text-0: #ffffff;
+            --text-1: #f5f5f5;
+            --text-2: #a0a0a0;
+            --text-3: #666666;
+            --yes: #00d26a;
+            --yes-dark: #00b359;
+            --no: #ff4757;
+            --no-dark: #e63946;
+            --maybe: #3b82f6;
+            --maybe-dark: #2563eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-1);
+            color: var(--text-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-0);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--text-0);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-badge {
+            background: var(--yes);
+            color: var(--bg-0);
+            font-size: 0.6rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-3);
+            color: var(--text-1);
+            border-color: var(--border-light);
+        }
+
+        .btn-primary {
+            background: var(--text-0);
+            color: var(--bg-0);
+        }
+
+        .btn-primary:hover {
+            background: var(--text-1);
+            transform: translateY(-1px);
+        }
+
+        .btn-yes {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .btn-no {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+
+        /* User Menu */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-4);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-2);
+            transition: all 0.15s;
+        }
+
+        .user-avatar:hover {
+            border-color: var(--text-2);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown.open {
+            display: block;
+        }
+
+        .user-dropdown-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-2);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-dropdown-item:hover {
+            background: var(--bg-3);
+            color: var(--text-1);
+        }
+
+        .user-dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 0;
+        }
+
+        .user-email {
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            color: var(--text-3);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+
+        /* Main */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Upload View */
+        .upload-view {
+            min-height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .upload-hero {
+            text-align: center;
+            max-width: 480px;
+            margin-bottom: 48px;
+        }
+
+        .upload-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        .upload-hero p {
+            color: var(--text-2);
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .upload-zone {
+            width: 100%;
+            max-width: 440px;
+            border: 1px dashed var(--border-light);
+            border-radius: 16px;
+            padding: 56px 40px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: var(--bg-2);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--text-2);
+            background: var(--bg-3);
+        }
+
+        .upload-zone-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.5rem;
+        }
+
+        .upload-zone h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            color: var(--text-3);
+            font-size: 0.875rem;
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .supported-formats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .format-badge {
+            background: var(--bg-4);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .demo-section {
+            margin-top: 48px;
+            text-align: center;
+        }
+
+        .demo-section p {
+            color: var(--text-3);
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* My Decks Section */
+        .my-decks-section {
+            margin-top: 48px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .my-decks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .my-decks-header h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-2);
+        }
+
+        .deck-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .deck-item {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .deck-item:hover {
+            background: var(--bg-3);
+            border-color: var(--border-light);
+        }
+
+        .deck-item-info h4 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .deck-item-info p {
+            font-size: 0.75rem;
+            color: var(--text-3);
+        }
+
+        .deck-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .deck-item-actions button {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: none;
+            background: var(--bg-4);
+            color: var(--text-2);
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.15s;
+        }
+
+        .deck-item-actions button:hover {
+            background: var(--bg-5);
+            color: var(--text-1);
+        }
+
+        .deck-item-actions .delete-btn:hover {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        /* Swipe View */
+        .swipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .deck-info h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .deck-info p {
+            color: var(--text-3);
+            font-size: 0.875rem;
+        }
+
+        .progress-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .progress-bar {
+            width: 160px;
+            height: 4px;
+            background: var(--bg-4);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--text-0);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text-2);
+            font-weight: 500;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* Card Container */
+        .card-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 420px;
+            position: relative;
+            margin: 24px 0;
+        }
+
+        .swipe-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+
+        .swipe-card:active {
+            cursor: grabbing;
+        }
+
+        .swipe-card.swiping-left {
+            transform: translateX(-120%) rotate(-15deg);
+            opacity: 0;
+        }
+
+        .swipe-card.swiping-right {
+            transform: translateX(120%) rotate(15deg);
+            opacity: 0;
+        }
+
+        .card-category {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            background: var(--bg-4);
+            color: var(--text-2);
+        }
+
+        .card-title {
+            font-size: 1.375rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+        }
+
+        .card-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: var(--bg-3);
+            border-radius: 10px;
+        }
+
+        .field-label {
+            color: var(--text-3);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .field-value {
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-align: right;
+            max-width: 55%;
+        }
+
+        .field-value.highlight {
+            color: var(--yes);
+            font-weight: 600;
+        }
+
+        .card-description {
+            color: var(--text-2);
+            font-size: 0.875rem;
+            line-height: 1.7;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .card-link {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-2);
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .card-link:hover {
+            color: var(--text-0);
+        }
+
+        /* Swipe Hints */
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.15s;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        .swipe-hint.left {
+            left: 24px;
+            background: var(--no);
+            color: var(--text-0);
+            transform: translateY(-50%) rotate(-12deg);
+        }
+
+        .swipe-hint.right {
+            right: 24px;
+            background: var(--yes);
+            color: var(--bg-0);
+            transform: translateY(-50%) rotate(12deg);
+        }
+
+        .swipe-hint.visible {
+            opacity: 1;
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin: 32px 0 24px;
+        }
+
+        .action-btn {
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.pass {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-3);
+            border: 2px solid var(--no);
+            color: var(--no);
+            font-size: 1.5rem;
+        }
+
+        .action-btn.pass:hover {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        .action-btn.maybe {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-3);
+            border: 2px solid var(--maybe);
+            color: var(--maybe);
+            font-size: 1.1rem;
+        }
+
+        .action-btn.maybe:hover {
+            background: var(--maybe);
+            color: var(--text-0);
+        }
+
+        .action-btn.like {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-3);
+            border: 2px solid var(--yes);
+            color: var(--yes);
+            font-size: 1.5rem;
+        }
+
+        .action-btn.like:hover {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .action-btn.link {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-3);
+            border: 2px solid var(--border-light);
+            color: var(--text-2);
+            font-size: 1.1rem;
+        }
+
+        .action-btn.link:hover {
+            background: var(--bg-4);
+            color: var(--text-0);
+            border-color: var(--text-2);
+        }
+
+        .keyboard-hints {
+            text-align: center;
+            color: var(--text-3);
+            font-size: 0.75rem;
+        }
+
+        .keyboard-hints kbd {
+            background: var(--bg-4);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            font-family: inherit;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--text-3);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 420px;
+            max-width: 100%;
+            height: 100vh;
+            background: var(--bg-2);
+            border-left: 1px solid var(--border);
+            transition: right 0.25s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .results-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text-1);
+        }
+
+        .panel-tabs {
+            display: flex;
+            padding: 16px 24px;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-4);
+            color: var(--text-2);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .panel-tab:hover {
+            background: var(--bg-5);
+        }
+
+        .panel-tab.active {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .panel-tab.maybe.active {
+            background: var(--maybe);
+            color: var(--text-0);
+        }
+
+        .panel-tab.pass.active {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+        }
+
+        .result-item {
+            background: var(--bg-3);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .result-item h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-item p {
+            font-size: 0.8rem;
+            color: var(--text-3);
+        }
+
+        .result-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .result-item-actions button,
+        .result-item-actions a {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-2);
+            text-decoration: none;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .result-item-actions button:hover,
+        .result-item-actions a:hover {
+            background: var(--bg-4);
+            color: var(--text-1);
+        }
+
+        .result-item-actions .remove-btn {
+            color: var(--no);
+            border-color: transparent;
+        }
+
+        .result-item-actions .remove-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .panel-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .export-btn.csv {
+            background: var(--text-0);
+            color: var(--bg-0);
+        }
+
+        .export-btn.csv:hover {
+            background: var(--text-1);
+        }
+
+        .export-btn.md {
+            background: var(--bg-4);
+            color: var(--text-1);
+            border: 1px solid var(--border);
+        }
+
+        .export-btn.md:hover {
+            background: var(--bg-5);
+        }
+
+        .export-btn.save {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .export-btn.save:hover {
+            background: var(--yes-dark);
+        }
+
+        .export-btn.share {
+            background: var(--maybe);
+            color: var(--text-0);
+        }
+
+        .export-btn.share:hover {
+            background: var(--maybe-dark);
+        }
+
+        /* Toggle Button */
+        .results-toggle {
+            position: fixed;
+            top: 72px;
+            right: 24px;
+            z-index: 99;
+        }
+
+        .results-toggle .badge {
+            background: var(--yes);
+            color: var(--bg-0);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* Auth Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .modal > p {
+            color: var(--text-2);
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .auth-form input {
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-3);
+            color: var(--text-1);
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .auth-form input:focus {
+            border-color: var(--text-2);
+        }
+
+        .auth-form input::placeholder {
+            color: var(--text-3);
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 20px 0;
+            color: var(--text-3);
+            font-size: 0.8rem;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .oauth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .oauth-btn {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-3);
+            color: var(--text-1);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.15s;
+        }
+
+        .oauth-btn:hover {
+            background: var(--bg-4);
+            border-color: var(--border-light);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            margin-top: 16px;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .close-modal:hover {
+            color: var(--text-1);
+        }
+
+        /* Share Modal */
+        .share-url {
+            display: flex;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .share-url input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-3);
+            color: var(--text-1);
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .share-url button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--text-0);
+            color: var(--bg-0);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-3);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            z-index: 3000;
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: var(--yes);
+        }
+
+        .toast.error {
+            border-color: var(--no);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            color: var(--text-3);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--text-0);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .upload-hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .swipe-card {
+                padding: 20px;
+            }
+
+            .card-title {
+                font-size: 1.2rem;
+            }
+
+            .action-btn.pass, .action-btn.like {
+                width: 56px;
+                height: 56px;
+                font-size: 1.3rem;
+            }
+
+            .action-btn.maybe, .action-btn.link {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+
+            .results-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .results-toggle {
+                top: auto;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeUp 0.4s ease;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-5);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo" onclick="showUploadView()">
+            <div class="logo-icon">◆</div>
+            <span class="logo-text">SwipeBase</span>
+            <span class="logo-badge">Cloud</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-ghost" onclick="showUploadView()" id="newDeckBtn">New Deck</button>
+
+            <!-- Auth buttons (shown when logged out) -->
+            <div id="authButtons">
+                <button class="btn btn-primary" onclick="showAuthModal()">Sign In</button>
+            </div>
+
+            <!-- User menu (shown when logged in) -->
+            <div class="user-menu" id="userMenu" style="display: none;">
+                <div class="user-avatar" onclick="toggleUserDropdown()" id="userAvatar">?</div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-email" id="userEmail">user@example.com</div>
+                    <div class="user-dropdown-item" onclick="showMyDecks()">My Decks</div>
+                    <div class="user-dropdown-divider"></div>
+                    <div class="user-dropdown-item" onclick="signOut()">Sign Out</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Results Toggle -->
+    <button class="btn btn-ghost results-toggle" onclick="toggleResults()" id="resultsToggle" style="display: none;">
+        Saved <span class="badge" id="savedCount">0</span>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Upload View -->
+        <div class="view active" id="uploadView">
+            <div class="upload-view">
+                <div class="upload-hero animate-in">
+                    <h1>Swipe through any data</h1>
+                    <p>Upload your CSV or JSON file and turn spreadsheets into an engaging swipe experience. Sign in to save your decks to the cloud.</p>
+                </div>
+
+                <div class="upload-zone animate-in" id="uploadZone">
+                    <div class="upload-zone-icon">↑</div>
+                    <h3>Drop your file here</h3>
+                    <p>or click to browse</p>
+                    <div class="supported-formats">
+                        <span class="format-badge">CSV</span>
+                        <span class="format-badge">JSON</span>
+                        <span class="format-badge">MD</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv,.json,.md">
+                </div>
+
+                <div class="demo-section animate-in">
+                    <p>No file? Try a demo</p>
+                    <div class="demo-buttons">
+                        <button class="btn btn-ghost" onclick="loadDemo('grants')">Grants</button>
+                        <button class="btn btn-ghost" onclick="loadDemo('jobs')">Jobs</button>
+                        <button class="btn btn-ghost" onclick="loadDemo('products')">Products</button>
+                    </div>
+                </div>
+
+                <!-- My Decks (shown when logged in) -->
+                <div class="my-decks-section" id="myDecksSection" style="display: none;">
+                    <div class="my-decks-header">
+                        <h3>My Decks</h3>
+                        <button class="btn btn-ghost btn-small" onclick="loadUserDecks()">Refresh</button>
+                    </div>
+                    <div class="deck-list" id="deckList">
+                        <div class="loading"><div class="spinner"></div> Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Swipe View -->
+        <div class="view" id="swipeView">
+            <div class="swipe-view">
+                <div class="swipe-header">
+                    <div class="deck-info">
+                        <h2 id="deckName">Deck Name</h2>
+                        <p id="deckDescription">Description</p>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">0/0</span>
+                    </div>
+                </div>
+
+                <div class="card-container" id="cardContainer"></div>
+
+                <div class="actions">
+                    <button class="action-btn pass" onclick="swipe('pass')" title="Pass (←)">✕</button>
+                    <button class="action-btn maybe" onclick="swipe('maybe')" title="Maybe (↓)">?</button>
+                    <button class="action-btn like" onclick="swipe('like')" title="Yes (→)">✓</button>
+                    <button class="action-btn link" onclick="openCurrentLink()" title="Open (↑)">↗</button>
+                </div>
+
+                <div class="keyboard-hints">
+                    <kbd>←</kbd> No <kbd>→</kbd> Yes <kbd>↓</kbd> Maybe <kbd>↑</kbd> Open
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Results Panel -->
+    <div class="results-panel" id="resultsPanel">
+        <div class="panel-header">
+            <h2>Saved Items</h2>
+            <button class="close-btn" onclick="toggleResults()">×</button>
+        </div>
+
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="like" onclick="switchResultTab('like')">
+                Yes (<span id="likeCount">0</span>)
+            </button>
+            <button class="panel-tab maybe" data-tab="maybe" onclick="switchResultTab('maybe')">
+                Maybe (<span id="maybeCount">0</span>)
+            </button>
+            <button class="panel-tab pass" data-tab="pass" onclick="switchResultTab('pass')">
+                No (<span id="passCount">0</span>)
+            </button>
+        </div>
+
+        <div class="panel-content" id="panelContent"></div>
+
+        <div class="panel-footer">
+            <div class="export-buttons">
+                <button class="export-btn save" onclick="saveDeckToCloud()" id="saveBtn" style="display: none;">Save to Cloud</button>
+                <button class="export-btn share" onclick="showShareModal()" id="shareBtn" style="display: none;">Share Deck</button>
+                <button class="export-btn csv" onclick="exportCSV()">Export CSV</button>
+                <button class="export-btn md" onclick="exportJSON()">Export JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <h2>Welcome to SwipeBase</h2>
+            <p>Sign in to save your decks and share with others</p>
+
+            <div class="auth-form">
+                <input type="email" id="authEmail" placeholder="Enter your email">
+                <button class="btn btn-primary" style="width: 100%;" onclick="signInWithEmail()">
+                    Send Magic Link
+                </button>
+            </div>
+
+            <div class="auth-divider">or</div>
+
+            <div class="oauth-buttons">
+                <button class="oauth-btn" onclick="signInWithGoogle()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+
+            <button class="close-modal" onclick="closeAuthModal()">Maybe later</button>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal">
+            <h2>Share Your Deck</h2>
+            <p>Anyone with this link can view and swipe through your deck</p>
+
+            <div class="share-url">
+                <input type="text" id="shareUrl" readonly value="">
+                <button onclick="copyShareUrl()">Copy</button>
+            </div>
+
+            <button class="close-modal" onclick="closeShareModal()">Done</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONFIG
+        // ============================================
+        // TODO: Replace with your Supabase credentials
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+        let supabase = null;
+        let currentUser = null;
+        let currentDeckId = null; // Track if we're editing an existing deck
+
+        // Initialize Supabase
+        function initSupabase() {
+            if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+                console.log('Supabase not configured. Running in local mode.');
+                return;
+            }
+
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Check for existing session
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    handleAuthChange(session.user);
+                }
+            });
+
+            // Listen for auth changes
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (session) {
+                    handleAuthChange(session.user);
+                } else {
+                    handleSignOut();
+                }
+            });
+        }
+
+        function handleAuthChange(user) {
+            currentUser = user;
+            document.getElementById('authButtons').style.display = 'none';
+            document.getElementById('userMenu').style.display = 'block';
+            document.getElementById('userAvatar').textContent = user.email?.[0]?.toUpperCase() || '?';
+            document.getElementById('userEmail').textContent = user.email || 'User';
+            document.getElementById('myDecksSection').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block';
+            loadUserDecks();
+            closeAuthModal();
+        }
+
+        function handleSignOut() {
+            currentUser = null;
+            document.getElementById('authButtons').style.display = 'flex';
+            document.getElementById('userMenu').style.display = 'none';
+            document.getElementById('myDecksSection').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('shareBtn').style.display = 'none';
+        }
+
+        // ============================================
+        // AUTH FUNCTIONS
+        // ============================================
+        function showAuthModal() {
+            document.getElementById('authModal').classList.add('open');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('open');
+        }
+
+        async function signInWithEmail() {
+            if (!supabase) {
+                showToast('Supabase not configured', 'error');
+                return;
+            }
+
+            const email = document.getElementById('authEmail').value;
+            if (!email) {
+                showToast('Please enter your email', 'error');
+                return;
+            }
+
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: window.location.href
+                }
+            });
+
+            if (error) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('Check your email for the magic link!', 'success');
+                closeAuthModal();
+            }
+        }
+
+        async function signInWithGoogle() {
+            if (!supabase) {
+                showToast('Supabase not configured', 'error');
+                return;
+            }
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href
+                }
+            });
+
+            if (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        async function signOut() {
+            if (supabase) {
+                await supabase.auth.signOut();
+            }
+            handleSignOut();
+            toggleUserDropdown();
+            showToast('Signed out', 'success');
+        }
+
+        function toggleUserDropdown() {
+            document.getElementById('userDropdown').classList.toggle('open');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown').classList.remove('open');
+            }
+        });
+
+        // ============================================
+        // CLOUD STORAGE
+        // ============================================
+        async function loadUserDecks() {
+            if (!supabase || !currentUser) return;
+
+            const deckList = document.getElementById('deckList');
+            deckList.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+
+            const { data: decks, error } = await supabase
+                .from('decks')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('updated_at', { ascending: false });
+
+            if (error) {
+                deckList.innerHTML = '<p style="color: var(--text-3); text-align: center;">Failed to load decks</p>';
+                return;
+            }
+
+            if (!decks || decks.length === 0) {
+                deckList.innerHTML = '<p style="color: var(--text-3); text-align: center;">No saved decks yet</p>';
+                return;
+            }
+
+            deckList.innerHTML = decks.map(deck => `
+                <div class="deck-item" onclick="loadDeckFromCloud('${deck.id}')">
+                    <div class="deck-item-info">
+                        <h4>${deck.name}</h4>
+                        <p>${deck.item_count} items · ${new Date(deck.updated_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="deck-item-actions" onclick="event.stopPropagation()">
+                        ${deck.is_public ? `<button onclick="copyDeckLink('${deck.share_id}')">Link</button>` : ''}
+                        <button class="delete-btn" onclick="deleteDeck('${deck.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadDeckFromCloud(deckId) {
+            if (!supabase) return;
+
+            showToast('Loading deck...', 'success');
+
+            // Get deck info
+            const { data: deck, error: deckError } = await supabase
+                .from('decks')
+                .select('*')
+                .eq('id', deckId)
+                .single();
+
+            if (deckError) {
+                showToast('Failed to load deck', 'error');
+                return;
+            }
+
+            // Get cards
+            const { data: cards, error: cardsError } = await supabase
+                .from('cards')
+                .select('*')
+                .eq('deck_id', deckId)
+                .order('position');
+
+            if (cardsError) {
+                showToast('Failed to load cards', 'error');
+                return;
+            }
+
+            // Get existing decisions
+            const { data: existingDecisions } = await supabase
+                .from('decisions')
+                .select('card_id, decision')
+                .eq('deck_id', deckId)
+                .eq('user_id', currentUser.id);
+
+            // Map cards to data format
+            const data = cards.map(c => ({ ...c.data, _cardId: c.id }));
+
+            currentDeckId = deckId;
+            loadData(data, deck.name, deck.description);
+
+            // Restore decisions
+            if (existingDecisions && existingDecisions.length > 0) {
+                existingDecisions.forEach(d => {
+                    const item = currentData.find(c => c._cardId === d.card_id);
+                    if (item) {
+                        decisions[d.decision].push(item);
+                    }
+                });
+                renderCard();
+                updateProgress();
+                updateCounts();
+            }
+        }
+
+        async function saveDeckToCloud() {
+            if (!supabase || !currentUser) {
+                showAuthModal();
+                return;
+            }
+
+            if (currentData.length === 0) {
+                showToast('No data to save', 'error');
+                return;
+            }
+
+            showToast('Saving...', 'success');
+
+            try {
+                let deckId = currentDeckId;
+
+                if (!deckId) {
+                    // Create new deck
+                    const { data: newDeck, error: deckError } = await supabase
+                        .from('decks')
+                        .insert({
+                            user_id: currentUser.id,
+                            name: deckName,
+                            description: document.getElementById('deckDescription').textContent,
+                            source: 'upload'
+                        })
+                        .select()
+                        .single();
+
+                    if (deckError) throw deckError;
+                    deckId = newDeck.id;
+                    currentDeckId = deckId;
+
+                    // Insert cards
+                    const cardsToInsert = currentData.map((item, i) => ({
+                        deck_id: deckId,
+                        data: item,
+                        position: i
+                    }));
+
+                    const { data: insertedCards, error: cardsError } = await supabase
+                        .from('cards')
+                        .insert(cardsToInsert)
+                        .select();
+
+                    if (cardsError) throw cardsError;
+
+                    // Update card IDs in currentData
+                    insertedCards.forEach((card, i) => {
+                        currentData[i]._cardId = card.id;
+                    });
+                }
+
+                // Save decisions
+                const allDecisions = [];
+                ['like', 'maybe', 'pass'].forEach(type => {
+                    decisions[type].forEach(item => {
+                        if (item._cardId) {
+                            allDecisions.push({
+                                user_id: currentUser.id,
+                                deck_id: deckId,
+                                card_id: item._cardId,
+                                decision: type
+                            });
+                        }
+                    });
+                });
+
+                if (allDecisions.length > 0) {
+                    // Upsert decisions
+                    const { error: decisionsError } = await supabase
+                        .from('decisions')
+                        .upsert(allDecisions, { onConflict: 'user_id,card_id' });
+
+                    if (decisionsError) throw decisionsError;
+                }
+
+                showToast('Saved to cloud!', 'success');
+                loadUserDecks();
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Failed to save: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteDeck(deckId) {
+            if (!confirm('Delete this deck?')) return;
+
+            const { error } = await supabase
+                .from('decks')
+                .delete()
+                .eq('id', deckId);
+
+            if (error) {
+                showToast('Failed to delete', 'error');
+            } else {
+                showToast('Deck deleted', 'success');
+                loadUserDecks();
+            }
+        }
+
+        // ============================================
+        // SHARING
+        // ============================================
+        async function showShareModal() {
+            if (!supabase || !currentUser || !currentDeckId) {
+                showToast('Save deck first', 'error');
+                return;
+            }
+
+            // Get or create share ID
+            const { data: deck } = await supabase
+                .from('decks')
+                .select('share_id, is_public')
+                .eq('id', currentDeckId)
+                .single();
+
+            let shareId = deck?.share_id;
+
+            if (!shareId) {
+                // Generate and save share ID
+                shareId = generateShareId();
+                await supabase
+                    .from('decks')
+                    .update({ share_id: shareId, is_public: true })
+                    .eq('id', currentDeckId);
+            } else if (!deck.is_public) {
+                await supabase
+                    .from('decks')
+                    .update({ is_public: true })
+                    .eq('id', currentDeckId);
+            }
+
+            const shareUrl = `${window.location.origin}${window.location.pathname}?deck=${shareId}`;
+            document.getElementById('shareUrl').value = shareUrl;
+            document.getElementById('shareModal').classList.add('open');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('open');
+        }
+
+        function copyShareUrl() {
+            const input = document.getElementById('shareUrl');
+            input.select();
+            document.execCommand('copy');
+            showToast('Link copied!', 'success');
+        }
+
+        function copyDeckLink(shareId) {
+            const url = `${window.location.origin}${window.location.pathname}?deck=${shareId}`;
+            navigator.clipboard.writeText(url);
+            showToast('Link copied!', 'success');
+        }
+
+        function generateShareId() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return result;
+        }
+
+        // Load shared deck from URL
+        async function loadSharedDeck() {
+            const params = new URLSearchParams(window.location.search);
+            const shareId = params.get('deck');
+
+            if (!shareId || !supabase) return;
+
+            showToast('Loading shared deck...', 'success');
+
+            const { data: deck, error: deckError } = await supabase
+                .from('decks')
+                .select('*')
+                .eq('share_id', shareId)
+                .eq('is_public', true)
+                .single();
+
+            if (deckError || !deck) {
+                showToast('Deck not found', 'error');
+                return;
+            }
+
+            const { data: cards } = await supabase
+                .from('cards')
+                .select('*')
+                .eq('deck_id', deck.id)
+                .order('position');
+
+            if (cards) {
+                const data = cards.map(c => ({ ...c.data, _cardId: c.id }));
+                loadData(data, deck.name, deck.description);
+            }
+        }
+
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // ORIGINAL SWIPEBASE CODE
+        // ============================================
+
+        // State
+        let currentData = [];
+        let decisions = { like: [], maybe: [], pass: [] };
+        let currentTab = 'like';
+        let deckName = 'My Deck';
+        let titleField = 'name';
+        let descriptionField = 'description';
+        let categoryField = 'type';
+        let linkField = 'url';
+        let highlightField = 'amount';
+
+        // Demo Data
+        const demoData = {
+            grants: {
+                name: 'Grants & Hackathons 2026',
+                description: '40+ opportunities',
+                data: [
+                    { name: "AI Grant", type: "grant", amount: "$80K credits", deadline: "Rolling", description: "No-strings-attached credits from Nat Friedman. $30K Anthropic + $25K Modal + $15K OpenAI.", url: "https://aigrant.com" },
+                    { name: "WEEX AI Wars", type: "hackathon", amount: "$880K + Bentley", deadline: "Mar 3", description: "Largest AI trading hackathon. Alpha Track $200K, Risk Track $150K, Execution $150K.", url: "https://dorahacks.io" },
+                    { name: "ETHGlobal Cannes", type: "hackathon", amount: "$500K+", deadline: "Apr 3-5", description: "Premier Ethereum hackathon right after EthCC. Sponsor bounties from Polygon, Chainlink, Safe.", url: "https://ethglobal.com" },
+                    { name: "Starknet Seed", type: "grant", amount: "$25K STRK", deadline: "Rolling", description: "Foundation grant for MVPs. 6-12 month milestones. ZK-native applications.", url: "https://starknet.io/grants" },
+                    { name: "Base Builder", type: "grant", amount: "1-5 ETH", deadline: "Weekly", description: "Retroactive grants for shipped products. Via Talent Protocol.", url: "https://docs.base.org" },
+                ]
+            },
+            jobs: {
+                name: 'Remote Tech Jobs',
+                description: 'Demo listings',
+                data: [
+                    { name: "Senior React Developer", type: "engineering", amount: "$150-180K", deadline: "Remote", description: "Build next-gen web apps. 5+ years React, TypeScript.", url: "#" },
+                    { name: "AI/ML Engineer", type: "engineering", amount: "$180-220K", deadline: "Remote", description: "Develop LLM applications. PyTorch, transformers.", url: "#" },
+                    { name: "Product Designer", type: "design", amount: "$120-150K", deadline: "Remote", description: "Shape user experiences. Figma, design systems.", url: "#" },
+                ]
+            },
+            products: {
+                name: 'Product Hunt Launches',
+                description: 'Demo products',
+                data: [
+                    { name: "Notion AI", type: "productivity", amount: "Free tier", deadline: "Available", description: "AI-powered writing assistant inside Notion.", url: "#" },
+                    { name: "Cursor IDE", type: "dev-tools", amount: "$20/mo", deadline: "Available", description: "AI-first code editor.", url: "#" },
+                ]
+            }
+        };
+
+        // Initialize
+        function init() {
+            initSupabase();
+            setupUploadZone();
+            setupKeyboard();
+            setupSwipeGestures();
+
+            // Check for shared deck in URL
+            setTimeout(() => loadSharedDeck(), 500);
+        }
+
+        function setupUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('click', () => input.click());
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+            });
+            input.addEventListener('change', (e) => { if (e.target.files[0]) processFile(e.target.files[0]); });
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                currentDeckId = null; // New deck
+                if (file.name.endsWith('.json')) {
+                    try {
+                        const data = JSON.parse(content);
+                        loadData(Array.isArray(data) ? data : data.data || [data], file.name.replace('.json', ''));
+                    } catch { alert('Invalid JSON'); }
+                } else if (file.name.endsWith('.csv')) {
+                    loadData(parseCSV(content), file.name.replace('.csv', ''));
+                } else if (file.name.endsWith('.md')) {
+                    loadData(parseMarkdown(content), file.name.replace('.md', ''));
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(content) {
+            const lines = content.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            return lines.slice(1).map(line => {
+                const values = line.match(/(".*?"|[^,]+)/g) || [];
+                const item = {};
+                headers.forEach((h, i) => item[h] = (values[i] || '').replace(/"/g, '').trim());
+                return item;
+            });
+        }
+
+        function parseMarkdown(content) {
+            const items = [];
+            const sections = content.split(/^##\s+/m).filter(s => s.trim());
+
+            sections.forEach(section => {
+                const lines = section.trim().split('\n');
+                const titleLine = lines[0].replace(/^\d+\.\s*/, '').trim();
+                if (!titleLine) return;
+
+                const item = { name: titleLine };
+                let description = [];
+
+                lines.slice(1).forEach(line => {
+                    const bulletMatch = line.match(/^[-*]\s+\*\*(.+?):\*\*\s*(.+)$/);
+                    if (bulletMatch) {
+                        item[bulletMatch[1].toLowerCase().trim()] = bulletMatch[2].trim();
+                    } else if (line.match(/^[-*]\s+(.+?):\s+(.+)$/)) {
+                        const m = line.match(/^[-*]\s+(.+?):\s+(.+)$/);
+                        item[m[1].toLowerCase().trim()] = m[2].trim();
+                    } else if (line.trim() && !line.startsWith('---') && !line.startsWith('#')) {
+                        description.push(line.trim());
+                    }
+                });
+
+                if (description.length && !item.description) {
+                    item.description = description.join(' ').substring(0, 300);
+                }
+
+                if (item.name) items.push(item);
+            });
+
+            return items;
+        }
+
+        function loadDemo(type) {
+            currentDeckId = null;
+            const demo = demoData[type];
+            loadData(demo.data, demo.name, demo.description);
+        }
+
+        function loadData(data, name = 'My Deck', description = '') {
+            currentData = data;
+            decisions = { like: [], maybe: [], pass: [] };
+            deckName = name;
+
+            if (data.length > 0) {
+                const keys = Object.keys(data[0]);
+                titleField = keys.find(k => ['name', 'title', 'Name', 'Title'].includes(k)) || keys[0];
+                descriptionField = keys.find(k => ['description', 'desc', 'Description'].includes(k)) || '';
+                categoryField = keys.find(k => ['type', 'category', 'Type'].includes(k)) || '';
+                linkField = keys.find(k => ['url', 'link', 'URL', 'Link'].includes(k)) || '';
+                highlightField = keys.find(k => ['amount', 'price', 'salary', 'Amount'].includes(k)) || '';
+            }
+
+            document.getElementById('deckName').textContent = name;
+            document.getElementById('deckDescription').textContent = description || `${data.length} items`;
+            showSwipeView();
+            renderCard();
+            updateProgress();
+            updateCounts();
+        }
+
+        function showUploadView() {
+            document.getElementById('uploadView').classList.add('active');
+            document.getElementById('swipeView').classList.remove('active');
+            document.getElementById('resultsToggle').style.display = 'none';
+        }
+
+        function showSwipeView() {
+            document.getElementById('uploadView').classList.remove('active');
+            document.getElementById('swipeView').classList.add('active');
+            document.getElementById('resultsToggle').style.display = 'flex';
+        }
+
+        function showMyDecks() {
+            showUploadView();
+            toggleUserDropdown();
+            loadUserDecks();
+        }
+
+        function getCurrentItem() {
+            const decided = [...decisions.like, ...decisions.maybe, ...decisions.pass];
+            return currentData.find(item => !decided.includes(item));
+        }
+
+        function renderCard() {
+            const container = document.getElementById('cardContainer');
+            const item = getCurrentItem();
+
+            if (!item) {
+                container.innerHTML = `
+                    <div class="empty-state animate-in">
+                        <div class="empty-state-icon">✓</div>
+                        <h3>All done</h3>
+                        <p>You reviewed ${currentData.length} items</p>
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            ${currentUser ? '<button class="btn btn-yes" onclick="saveDeckToCloud()">Save to Cloud</button>' : ''}
+                            <button class="btn btn-ghost" onclick="resetDeck()">Start Over</button>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            const fields = Object.keys(item).filter(k => k !== titleField && k !== descriptionField && item[k] && !k.startsWith('_'));
+
+            container.innerHTML = `
+                <div class="swipe-hint left">NO</div>
+                <div class="swipe-hint right">YES</div>
+                <div class="swipe-card animate-in">
+                    ${categoryField && item[categoryField] ? `<span class="card-category">${item[categoryField]}</span>` : ''}
+                    <h3 class="card-title">${item[titleField] || 'Untitled'}</h3>
+                    <div class="card-fields">
+                        ${fields.slice(0, 4).map(f => `
+                            <div class="card-field">
+                                <span class="field-label">${f}</span>
+                                <span class="field-value ${f === highlightField ? 'highlight' : ''}">${item[f]}</span>
+                            </div>`).join('')}
+                    </div>
+                    ${descriptionField && item[descriptionField] ? `<div class="card-description">${item[descriptionField]}</div>` : ''}
+                    ${linkField && item[linkField] ? `<a href="${item[linkField]}" target="_blank" class="card-link">Open link →</a>` : ''}
+                </div>`;
+        }
+
+        function swipe(decision) {
+            const item = getCurrentItem();
+            if (!item) return;
+
+            const card = document.querySelector('.swipe-card');
+            if (card) card.classList.add(decision === 'pass' ? 'swiping-left' : 'swiping-right');
+
+            decisions[decision].push(item);
+            setTimeout(() => { renderCard(); updateProgress(); updateCounts(); }, 200);
+        }
+
+        function updateProgress() {
+            const total = currentData.length;
+            const done = decisions.like.length + decisions.maybe.length + decisions.pass.length;
+            document.getElementById('progressFill').style.width = `${total ? (done/total)*100 : 0}%`;
+            document.getElementById('progressText').textContent = `${done}/${total}`;
+        }
+
+        function updateCounts() {
+            document.getElementById('savedCount').textContent = decisions.like.length;
+            document.getElementById('likeCount').textContent = decisions.like.length;
+            document.getElementById('maybeCount').textContent = decisions.maybe.length;
+            document.getElementById('passCount').textContent = decisions.pass.length;
+            renderResults();
+        }
+
+        function toggleResults() { document.getElementById('resultsPanel').classList.toggle('open'); }
+
+        function switchResultTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.panel-tab[data-tab="${tab}"]`).classList.add('active');
+            renderResults();
+        }
+
+        function renderResults() {
+            const content = document.getElementById('panelContent');
+            const items = decisions[currentTab];
+            if (!items.length) {
+                content.innerHTML = '<p style="text-align:center;color:var(--text-3);padding:40px;">No items yet</p>';
+                return;
+            }
+            content.innerHTML = items.map((item, i) => `
+                <div class="result-item">
+                    <h4>${item[titleField] || 'Untitled'}</h4>
+                    <p>${highlightField && item[highlightField] ? item[highlightField] : ''}${categoryField && item[categoryField] ? ' · '+item[categoryField] : ''}</p>
+                    <div class="result-item-actions">
+                        ${linkField && item[linkField] ? `<a href="${item[linkField]}" target="_blank">Open</a>` : ''}
+                        <button class="remove-btn" onclick="removeItem('${currentTab}',${i})">Remove</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function removeItem(tab, i) {
+            decisions[tab].splice(i, 1);
+            renderCard(); updateProgress(); updateCounts();
+        }
+
+        function resetDeck() {
+            decisions = { like: [], maybe: [], pass: [] };
+            renderCard(); updateProgress(); updateCounts();
+        }
+
+        function openCurrentLink() {
+            const item = getCurrentItem();
+            if (item && linkField && item[linkField]) window.open(item[linkField], '_blank');
+        }
+
+        function setupKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') swipe('pass');
+                if (e.key === 'ArrowRight') swipe('like');
+                if (e.key === 'ArrowDown') swipe('maybe');
+                if (e.key === 'ArrowUp') openCurrentLink();
+            });
+        }
+
+        function setupSwipeGestures() {
+            let startX = 0, currentX = 0, isDragging = false;
+            const container = document.getElementById('cardContainer');
+
+            const start = (x) => { isDragging = true; startX = x; const c = document.querySelector('.swipe-card'); if(c) c.style.transition = 'none'; };
+            const move = (x) => {
+                if (!isDragging) return;
+                const card = document.querySelector('.swipe-card');
+                if (!card) return;
+                currentX = x - startX;
+                card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.06}deg)`;
+                document.querySelector('.swipe-hint.left')?.classList.toggle('visible', currentX < -50);
+                document.querySelector('.swipe-hint.right')?.classList.toggle('visible', currentX > 50);
+            };
+            const end = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const card = document.querySelector('.swipe-card');
+                if (card) card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                if (currentX < -80) swipe('pass');
+                else if (currentX > 80) swipe('like');
+                else if (card) card.style.transform = '';
+                document.querySelectorAll('.swipe-hint').forEach(h => h.classList.remove('visible'));
+                currentX = 0;
+            };
+
+            container.addEventListener('mousedown', e => start(e.clientX));
+            container.addEventListener('mousemove', e => move(e.clientX));
+            container.addEventListener('mouseup', end);
+            container.addEventListener('mouseleave', end);
+            container.addEventListener('touchstart', e => start(e.touches[0].clientX));
+            container.addEventListener('touchmove', e => move(e.touches[0].clientX));
+            container.addEventListener('touchend', end);
+        }
+
+        function exportCSV() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            const headers = Object.keys(items[0]).filter(k => !k.startsWith('_'));
+            let csv = headers.join(',') + '\n';
+            items.forEach(item => csv += headers.map(h => `"${(item[h]||'').toString().replace(/"/g,'""')}"`).join(',') + '\n');
+            download(csv, `${deckName}-yes.csv`, 'text/csv');
+        }
+
+        function exportJSON() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            // Remove internal fields
+            const cleanItems = items.map(item => {
+                const clean = {};
+                Object.keys(item).forEach(k => {
+                    if (!k.startsWith('_')) clean[k] = item[k];
+                });
+                return clean;
+            });
+            const json = JSON.stringify(cleanItems, null, 2);
+            download(json, `${deckName}-yes.json`, 'application/json');
+        }
+
+        function download(content, filename, type) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], { type }));
+            a.download = filename;
+            a.click();
+        }
+
+        init();
+    </script>
+</body>
+</html>

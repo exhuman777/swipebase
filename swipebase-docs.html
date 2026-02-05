@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeBase - Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #000000;
+            --bg-1: #0a0a0a;
+            --bg-2: #111111;
+            --bg-3: #1a1a1a;
+            --bg-4: #222222;
+            --border: #333333;
+            --text-0: #ffffff;
+            --text-1: #f5f5f5;
+            --text-2: #a0a0a0;
+            --text-3: #666666;
+            --yes: #00d26a;
+            --no: #ff4757;
+            --maybe: #3b82f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-1);
+            color: var(--text-1);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 60px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--text-0);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        header p {
+            color: var(--text-2);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: var(--text-0);
+            color: var(--bg-0);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-3);
+            color: var(--text-1);
+        }
+
+        nav {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        nav ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            list-style: none;
+        }
+
+        nav a {
+            color: var(--text-2);
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+
+        nav a:hover {
+            background: var(--bg-4);
+            color: var(--text-1);
+        }
+
+        section {
+            margin-bottom: 60px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            letter-spacing: -0.5px;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 30px 0 12px;
+            color: var(--text-1);
+        }
+
+        p {
+            color: var(--text-2);
+            margin-bottom: 16px;
+        }
+
+        ul, ol {
+            color: var(--text-2);
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        code {
+            background: var(--bg-3);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85rem;
+        }
+
+        pre {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+        }
+
+        .card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .feature {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .feature h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-q {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-1);
+        }
+
+        .faq-a {
+            color: var(--text-2);
+            font-size: 0.95rem;
+        }
+
+        .use-case {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .use-case h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .use-case p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: var(--bg-4);
+            color: var(--text-2);
+        }
+
+        .tag.free { background: rgba(0, 210, 106, 0.2); color: var(--yes); }
+        .tag.pro { background: rgba(59, 130, 246, 0.2); color: var(--maybe); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-1);
+            background: var(--bg-2);
+        }
+
+        td {
+            color: var(--text-2);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+            color: var(--text-3);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.75rem; }
+            .cta-buttons { flex-direction: column; }
+            nav ul { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">◆</div>
+                <span class="logo-text">SwipeBase</span>
+            </div>
+            <h1>Swipe through any data</h1>
+            <p>Transform boring spreadsheets into engaging swipe experiences. Review, decide, export. No backend required.</p>
+            <div class="cta-buttons">
+                <a href="swipebase.html" class="btn btn-primary">Launch App</a>
+                <a href="#quickstart" class="btn btn-ghost">Quick Start</a>
+            </div>
+        </header>
+
+        <nav>
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#quickstart">Quick Start</a></li>
+                <li><a href="#file-formats">File Formats</a></li>
+                <li><a href="#use-cases">Use Cases</a></li>
+                <li><a href="#api">Technical</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+        </nav>
+
+        <section id="about">
+            <h2>About SwipeBase</h2>
+            <p>SwipeBase is a lightweight, privacy-first tool that lets you review any dataset using a Tinder-like swipe interface. Upload a CSV, JSON, or Markdown file, swipe through items, and export your decisions.</p>
+
+            <h3>Why SwipeBase?</h3>
+            <ul>
+                <li><strong>No account required</strong> - Start immediately, no sign-up friction</li>
+                <li><strong>100% client-side</strong> - Your data never leaves your browser</li>
+                <li><strong>Works offline</strong> - Once loaded, no internet needed</li>
+                <li><strong>Universal</strong> - Works with any CSV, JSON, or Markdown data</li>
+                <li><strong>Mobile-friendly</strong> - Swipe gestures work on touch devices</li>
+            </ul>
+
+            <h3>How It Works</h3>
+            <ol>
+                <li><strong>Upload</strong> - Drop your CSV, JSON, or Markdown file (or try a demo)</li>
+                <li><strong>Swipe</strong> - Review items one by one: Yes, No, or Maybe</li>
+                <li><strong>Export</strong> - Download your decisions as CSV, JSON, Excel, or Markdown</li>
+            </ol>
+        </section>
+
+        <section id="features">
+            <h2>Features</h2>
+
+            <div class="grid">
+                <div class="feature">
+                    <div class="feature-icon">📄</div>
+                    <h4>Universal File Support</h4>
+                    <p>Upload any CSV, JSON, or Markdown file. Auto-detects title, description, and highlight fields.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">👆</div>
+                    <h4>Swipe Gestures</h4>
+                    <p>Touch-friendly swipe left/right on mobile. Keyboard shortcuts on desktop.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h4>Three-Way Decisions</h4>
+                    <p>Yes, No, or Maybe. Track all your decisions in one place.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h4>Export Options</h4>
+                    <p>Download results as CSV, JSON, Excel, or Markdown. Pro: Notion, Sheets, share links.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h4>Privacy First</h4>
+                    <p>All processing happens in your browser. We never see your data.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h4>Instant Load</h4>
+                    <p>No server round-trips. Files are processed instantly on your device.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="quickstart">
+            <h2>Quick Start</h2>
+
+            <h3>Option 1: Try a Demo</h3>
+            <ol>
+                <li>Open <a href="swipebase.html">SwipeBase</a></li>
+                <li>Click one of the demo buttons: Grants, Jobs, or Products</li>
+                <li>Start swiping!</li>
+            </ol>
+
+            <h3>Option 2: Upload Your File</h3>
+            <ol>
+                <li>Prepare your data as CSV, JSON, or Markdown</li>
+                <li>Drag & drop the file onto the upload zone</li>
+                <li>SwipeBase auto-detects columns and starts the deck</li>
+            </ol>
+
+            <h3>Keyboard Shortcuts</h3>
+            <table>
+                <tr><th>Key</th><th>Action</th></tr>
+                <tr><td><code>←</code> Left Arrow</td><td>Swipe No (reject)</td></tr>
+                <tr><td><code>→</code> Right Arrow</td><td>Swipe Yes (accept)</td></tr>
+                <tr><td><code>↓</code> Down Arrow</td><td>Maybe (undecided)</td></tr>
+                <tr><td><code>↑</code> Up Arrow</td><td>Open item URL (if available)</td></tr>
+            </table>
+        </section>
+
+        <section id="file-formats">
+            <h2>File Formats</h2>
+
+            <h3>CSV Format</h3>
+            <p>Standard CSV with headers in the first row. UTF-8 encoding recommended.</p>
+            <pre><code>name,type,amount,description,url
+"AI Grant",grant,"$80K","No-strings credits",https://aigrant.com
+"ETHGlobal",hackathon,"$500K","Ethereum hackathon",https://ethglobal.com</code></pre>
+
+            <h3>JSON Format</h3>
+            <p>Array of objects, or an object with a <code>data</code> array.</p>
+            <pre><code>[
+  {
+    "name": "AI Grant",
+    "type": "grant",
+    "amount": "$80K",
+    "description": "No-strings credits",
+    "url": "https://aigrant.com"
+  },
+  {
+    "name": "ETHGlobal",
+    "type": "hackathon",
+    "amount": "$500K",
+    "description": "Ethereum hackathon"
+  }
+]</code></pre>
+
+            <h3>Auto-Detected Fields</h3>
+            <table>
+                <tr><th>Field Type</th><th>Detected Names</th><th>Purpose</th></tr>
+                <tr><td>Title</td><td>name, title, Name, Title</td><td>Main card heading</td></tr>
+                <tr><td>Description</td><td>description, desc, Description</td><td>Card body text</td></tr>
+                <tr><td>Category</td><td>type, category, Type, Category</td><td>Category badge</td></tr>
+                <tr><td>Amount</td><td>amount, price, salary, Amount</td><td>Highlighted value (green)</td></tr>
+                <tr><td>Link</td><td>url, link, URL, Link, website</td><td>"Open link" button</td></tr>
+            </table>
+            <p>All other columns are displayed as field/value rows on the card.</p>
+        </section>
+
+        <section id="use-cases">
+            <h2>Use Cases</h2>
+
+            <div class="use-case">
+                <h4>🎯 Grants & Hackathons</h4>
+                <p>Review funding opportunities, hackathons, and events. Quickly filter what's relevant for your team. Export a shortlist to share with stakeholders.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>💼 Job Applications</h4>
+                <p>HR teams can review candidate profiles. Hiring managers can swipe through job applicants. Export accepted candidates for interviews.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>🛍️ Product Research</h4>
+                <p>Review competitor products, SaaS tools, or vendor options. Make quick decisions without spreadsheet fatigue.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>📚 Content Curation</h4>
+                <p>Review articles, videos, or resources for a newsletter. Swipe to curate the best content for your audience.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>🏠 Real Estate</h4>
+                <p>Review property listings. Swipe through apartments or houses. Share your favorites with family members.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>🎨 Design Review</h4>
+                <p>Review design concepts, logos, or UI mockups. Quick feedback loop without lengthy meetings.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>📋 Inventory Management</h4>
+                <p>Review products that need restocking, items to discontinue, or new suppliers to consider.</p>
+            </div>
+
+            <div class="use-case">
+                <h4>🎓 Course Selection</h4>
+                <p>Students can review courses, electives, or study programs. Swipe to build your semester schedule.</p>
+            </div>
+        </section>
+
+        <section id="api">
+            <h2>Technical Details</h2>
+
+            <h3>Architecture</h3>
+            <p><strong>SwipeBase requires no backend or API.</strong> It's a single HTML file with embedded CSS and JavaScript that runs entirely in your browser.</p>
+
+            <div class="card">
+                <h4>No Server Required</h4>
+                <p>All file parsing, data processing, and export generation happens client-side using native browser APIs (FileReader, Blob, URL.createObjectURL).</p>
+            </div>
+
+            <h3>Technologies Used</h3>
+            <ul>
+                <li><strong>HTML5</strong> - Semantic markup</li>
+                <li><strong>CSS3</strong> - Custom properties, flexbox, grid, animations</li>
+                <li><strong>Vanilla JavaScript</strong> - No frameworks, no dependencies</li>
+                <li><strong>FileReader API</strong> - For reading uploaded files</li>
+                <li><strong>Blob API</strong> - For generating export files</li>
+                <li><strong>Touch Events</strong> - For mobile swipe gestures</li>
+            </ul>
+
+            <h3>Browser Support</h3>
+            <ul>
+                <li>Chrome 60+ (recommended)</li>
+                <li>Firefox 55+</li>
+                <li>Safari 12+</li>
+                <li>Edge 79+</li>
+                <li>Mobile Safari (iOS 12+)</li>
+                <li>Chrome for Android</li>
+            </ul>
+
+            <h3>Self-Hosting</h3>
+            <p>SwipeBase is a single HTML file. To self-host:</p>
+            <ol>
+                <li>Download <code>swipebase.html</code></li>
+                <li>Place it on any web server or open locally</li>
+                <li>No build step, no configuration required</li>
+            </ol>
+
+            <h3>Customization</h3>
+            <p>Edit the CSS variables at the top of the file to customize colors:</p>
+            <pre><code>:root {
+    --bg-1: #0a0a0a;     /* Main background */
+    --text-0: #ffffff;   /* Primary text */
+    --yes: #00d26a;      /* Accept color */
+    --no: #ff4757;       /* Reject color */
+    --maybe: #3b82f6;    /* Maybe color */
+}</code></pre>
+        </section>
+
+        <section id="pricing">
+            <h2>Pricing</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>Free <span class="tag free">FREE</span></h4>
+                    <ul>
+                        <li>3 decks</li>
+                        <li>100 items per deck</li>
+                        <li>Export to CSV</li>
+                        <li>Export to JSON</li>
+                        <li>Export to Excel</li>
+                        <li>Export to Markdown</li>
+                        <li>All swipe features</li>
+                        <li>Keyboard shortcuts</li>
+                        <li>Mobile support</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Pro <span class="tag pro">$5/month</span></h4>
+                    <ul>
+                        <li>Unlimited decks</li>
+                        <li>Unlimited items</li>
+                        <li>Share decks via link</li>
+                        <li>Export to Notion</li>
+                        <li>Export to Google Sheets</li>
+                        <li>Analytics & insights</li>
+                        <li>Custom branding</li>
+                        <li>API access</li>
+                        <li>Priority support</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="faq">
+            <h2>Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-q">Is my data sent to any server?</div>
+                <div class="faq-a">No. SwipeBase is 100% client-side. Your files are processed entirely in your browser and never uploaded anywhere. We have no backend, no database, no analytics that track your content.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Does it work offline?</div>
+                <div class="faq-a">Yes. Once the page is loaded, you can disconnect from the internet and continue using SwipeBase. All functionality works offline.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">What's the maximum file size?</div>
+                <div class="faq-a">There's no hard limit, but performance depends on your device. We recommend keeping files under 10MB / 10,000 rows for smooth operation.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Can I use it on mobile?</div>
+                <div class="faq-a">Yes. SwipeBase is fully responsive and supports touch gestures. Swipe left for No, right for Yes, just like Tinder.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">How do I save my progress?</div>
+                <div class="faq-a">Currently, decisions are stored in browser memory during your session. Use the Export feature (CSV, JSON, Excel, or Markdown) to save your Yes/Maybe/No lists before closing the tab.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Can I customize the card layout?</div>
+                <div class="faq-a">SwipeBase auto-detects columns from your file. The first 4 non-title/description fields are shown as rows. For deeper customization, edit the source code (it's open).</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">What's the difference between Free and Pro?</div>
+                <div class="faq-a">Free gives you full swipe functionality with CSV/Markdown export. Pro adds sharing, team features, advanced exports (Notion/Sheets), and removes deck limits.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Can I embed SwipeBase on my website?</div>
+                <div class="faq-a">Yes. It's a single HTML file. You can iframe it or modify the source code for your needs. Pro users get white-label/custom branding options.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Is there an API?</div>
+                <div class="faq-a">The current version is frontend-only with no API. Pro tier will include API access for programmatic deck creation and result retrieval.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Can multiple people swipe the same deck?</div>
+                <div class="faq-a">Coming in Pro: Share a deck link and collect swipe decisions from multiple team members, then see aggregated results.</div>
+            </div>
+        </section>
+
+        <footer>
+            <p>SwipeBase by Rufus | <a href="swipebase.html" style="color: var(--text-2);">Launch App</a></p>
+        </footer>
+    </div>
+</body>
+</html>

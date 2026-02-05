@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SwipeBase - Swipe Through Any Data</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #000000;
+            --bg-1: #0a0a0a;
+            --bg-2: #111111;
+            --bg-3: #1a1a1a;
+            --bg-4: #222222;
+            --bg-5: #2a2a2a;
+            --border: #333333;
+            --border-light: #444444;
+            --text-0: #ffffff;
+            --text-1: #f5f5f5;
+            --text-2: #a0a0a0;
+            --text-3: #666666;
+            --yes: #00d26a;
+            --yes-dark: #00b359;
+            --no: #ff4757;
+            --no-dark: #e63946;
+            --maybe: #3b82f6;
+            --maybe-dark: #2563eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-1);
+            color: var(--text-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-0);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--text-0);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .logo-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-badge {
+            background: var(--bg-4);
+            color: var(--text-2);
+            font-size: 0.6rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-3);
+            color: var(--text-1);
+            border-color: var(--border-light);
+        }
+
+        .btn-primary {
+            background: var(--text-0);
+            color: var(--bg-0);
+        }
+
+        .btn-primary:hover {
+            background: var(--text-1);
+            transform: translateY(-1px);
+        }
+
+        .btn-yes {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .btn-no {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        /* Main */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Upload View */
+        .upload-view {
+            min-height: calc(100vh - 140px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .upload-hero {
+            text-align: center;
+            max-width: 480px;
+            margin-bottom: 48px;
+        }
+
+        .upload-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+            line-height: 1.1;
+        }
+
+        .upload-hero p {
+            color: var(--text-2);
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .upload-zone {
+            width: 100%;
+            max-width: 440px;
+            border: 1px dashed var(--border-light);
+            border-radius: 16px;
+            padding: 56px 40px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background: var(--bg-2);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--text-2);
+            background: var(--bg-3);
+        }
+
+        .upload-zone-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-4);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 1.5rem;
+        }
+
+        .upload-zone h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            color: var(--text-3);
+            font-size: 0.875rem;
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .supported-formats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .format-badge {
+            background: var(--bg-4);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .demo-section {
+            margin-top: 48px;
+            text-align: center;
+        }
+
+        .demo-section p {
+            color: var(--text-3);
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Swipe View */
+        .swipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .deck-info h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .deck-info p {
+            color: var(--text-3);
+            font-size: 0.875rem;
+        }
+
+        .progress-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .progress-bar {
+            width: 160px;
+            height: 4px;
+            background: var(--bg-4);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--text-0);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--text-2);
+            font-weight: 500;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* Card Container */
+        .card-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 420px;
+            position: relative;
+            margin: 24px 0;
+        }
+
+        .swipe-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+
+        .swipe-card:active {
+            cursor: grabbing;
+        }
+
+        .swipe-card.swiping-left {
+            transform: translateX(-120%) rotate(-15deg);
+            opacity: 0;
+        }
+
+        .swipe-card.swiping-right {
+            transform: translateX(120%) rotate(15deg);
+            opacity: 0;
+        }
+
+        .card-category {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            background: var(--bg-4);
+            color: var(--text-2);
+        }
+
+        .card-title {
+            font-size: 1.375rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+        }
+
+        .card-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: var(--bg-3);
+            border-radius: 10px;
+        }
+
+        .field-label {
+            color: var(--text-3);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .field-value {
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-align: right;
+            max-width: 55%;
+        }
+
+        .field-value.highlight {
+            color: var(--yes);
+            font-weight: 600;
+        }
+
+        .card-description {
+            color: var(--text-2);
+            font-size: 0.875rem;
+            line-height: 1.7;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .card-link {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-2);
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .card-link:hover {
+            color: var(--text-0);
+        }
+
+        /* Swipe Hints */
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.15s;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        .swipe-hint.left {
+            left: 24px;
+            background: var(--no);
+            color: var(--text-0);
+            transform: translateY(-50%) rotate(-12deg);
+        }
+
+        .swipe-hint.right {
+            right: 24px;
+            background: var(--yes);
+            color: var(--bg-0);
+            transform: translateY(-50%) rotate(12deg);
+        }
+
+        .swipe-hint.visible {
+            opacity: 1;
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin: 32px 0 24px;
+        }
+
+        .action-btn {
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.pass {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-3);
+            border: 2px solid var(--no);
+            color: var(--no);
+            font-size: 1.5rem;
+        }
+
+        .action-btn.pass:hover {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        .action-btn.maybe {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-3);
+            border: 2px solid var(--maybe);
+            color: var(--maybe);
+            font-size: 1.1rem;
+        }
+
+        .action-btn.maybe:hover {
+            background: var(--maybe);
+            color: var(--text-0);
+        }
+
+        .action-btn.like {
+            width: 64px;
+            height: 64px;
+            background: var(--bg-3);
+            border: 2px solid var(--yes);
+            color: var(--yes);
+            font-size: 1.5rem;
+        }
+
+        .action-btn.like:hover {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .action-btn.link {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-3);
+            border: 2px solid var(--border-light);
+            color: var(--text-2);
+            font-size: 1.1rem;
+        }
+
+        .action-btn.link:hover {
+            background: var(--bg-4);
+            color: var(--text-0);
+            border-color: var(--text-2);
+        }
+
+        .keyboard-hints {
+            text-align: center;
+            color: var(--text-3);
+            font-size: 0.75rem;
+        }
+
+        .keyboard-hints kbd {
+            background: var(--bg-4);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            font-family: inherit;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--text-3);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 420px;
+            max-width: 100%;
+            height: 100vh;
+            background: var(--bg-2);
+            border-left: 1px solid var(--border);
+            transition: right 0.25s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .results-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text-1);
+        }
+
+        .panel-tabs {
+            display: flex;
+            padding: 16px 24px;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-tab {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-4);
+            color: var(--text-2);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .panel-tab:hover {
+            background: var(--bg-5);
+        }
+
+        .panel-tab.active {
+            background: var(--yes);
+            color: var(--bg-0);
+        }
+
+        .panel-tab.maybe.active {
+            background: var(--maybe);
+            color: var(--text-0);
+        }
+
+        .panel-tab.pass.active {
+            background: var(--no);
+            color: var(--text-0);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+        }
+
+        .result-item {
+            background: var(--bg-3);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .result-item h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-item p {
+            font-size: 0.8rem;
+            color: var(--text-3);
+        }
+
+        .result-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .result-item-actions button,
+        .result-item-actions a {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-2);
+            text-decoration: none;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .result-item-actions button:hover,
+        .result-item-actions a:hover {
+            background: var(--bg-4);
+            color: var(--text-1);
+        }
+
+        .result-item-actions .remove-btn {
+            color: var(--no);
+            border-color: transparent;
+        }
+
+        .result-item-actions .remove-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .panel-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.15s;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .export-btn.csv {
+            background: var(--text-0);
+            color: var(--bg-0);
+        }
+
+        .export-btn.csv:hover {
+            background: var(--text-1);
+        }
+
+        .export-btn.md {
+            background: var(--bg-4);
+            color: var(--text-1);
+            border: 1px solid var(--border);
+        }
+
+        .export-btn.md:hover {
+            background: var(--bg-5);
+        }
+
+        .export-btn.pro {
+            opacity: 0.6;
+        }
+
+        .pro-badge {
+            background: var(--bg-5);
+            color: var(--text-2);
+            font-size: 0.6rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Toggle Button */
+        .results-toggle {
+            position: fixed;
+            top: 72px;
+            right: 24px;
+            z-index: 99;
+        }
+
+        .results-toggle .badge {
+            background: var(--yes);
+            color: var(--bg-0);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        /* Pro Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .modal > p {
+            color: var(--text-2);
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+
+        .pricing-card {
+            background: var(--bg-3);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .price span {
+            font-size: 0.9rem;
+            color: var(--text-3);
+            font-weight: 400;
+        }
+
+        .features-list {
+            text-align: left;
+            margin: 24px 0;
+            list-style: none;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-2);
+            font-size: 0.875rem;
+        }
+
+        .features-list li::before {
+            content: "✓";
+            color: var(--yes);
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            margin-top: 16px;
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .close-modal:hover {
+            color: var(--text-1);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .upload-hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .swipe-card {
+                padding: 20px;
+            }
+
+            .card-title {
+                font-size: 1.2rem;
+            }
+
+            .action-btn.pass, .action-btn.like {
+                width: 56px;
+                height: 56px;
+                font-size: 1.3rem;
+            }
+
+            .action-btn.maybe, .action-btn.link {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+
+            .results-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .results-toggle {
+                top: auto;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeUp 0.4s ease;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-5);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">◆</div>
+            <span class="logo-text">SwipeBase</span>
+            <span class="logo-badge">Beta</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-ghost" onclick="showUploadView()">New Deck</button>
+            <button class="btn btn-primary" onclick="showProModal()">Go Pro</button>
+        </div>
+    </header>
+
+    <!-- Results Toggle -->
+    <button class="btn btn-ghost results-toggle" onclick="toggleResults()" id="resultsToggle" style="display: none;">
+        Saved <span class="badge" id="savedCount">0</span>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Upload View -->
+        <div class="view active" id="uploadView">
+            <div class="upload-view">
+                <div class="upload-hero animate-in">
+                    <h1>Swipe through any data</h1>
+                    <p>Upload your CSV or JSON file and turn spreadsheets into an engaging swipe experience. Review opportunities, candidates, products, or any list.</p>
+                </div>
+
+                <div class="upload-zone animate-in" id="uploadZone">
+                    <div class="upload-zone-icon">↑</div>
+                    <h3>Drop your file here</h3>
+                    <p>or click to browse</p>
+                    <div class="supported-formats">
+                        <span class="format-badge">CSV</span>
+                        <span class="format-badge">JSON</span>
+                        <span class="format-badge">MD</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv,.json,.md">
+                </div>
+
+                <div class="demo-section animate-in">
+                    <p>No file? Try a demo</p>
+                    <div class="demo-buttons">
+                        <button class="btn btn-ghost" onclick="loadDemo('grants')">Grants</button>
+                        <button class="btn btn-ghost" onclick="loadDemo('jobs')">Jobs</button>
+                        <button class="btn btn-ghost" onclick="loadDemo('products')">Products</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Swipe View -->
+        <div class="view" id="swipeView">
+            <div class="swipe-view">
+                <div class="swipe-header">
+                    <div class="deck-info">
+                        <h2 id="deckName">Deck Name</h2>
+                        <p id="deckDescription">Description</p>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">0/0</span>
+                    </div>
+                </div>
+
+                <div class="card-container" id="cardContainer"></div>
+
+                <div class="actions">
+                    <button class="action-btn pass" onclick="swipe('pass')" title="Pass (←)">✕</button>
+                    <button class="action-btn maybe" onclick="swipe('maybe')" title="Maybe (↓)">?</button>
+                    <button class="action-btn like" onclick="swipe('like')" title="Yes (→)">✓</button>
+                    <button class="action-btn link" onclick="openCurrentLink()" title="Open (↑)">↗</button>
+                </div>
+
+                <div class="keyboard-hints">
+                    <kbd>←</kbd> No <kbd>→</kbd> Yes <kbd>↓</kbd> Maybe <kbd>↑</kbd> Open
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Results Panel -->
+    <div class="results-panel" id="resultsPanel">
+        <div class="panel-header">
+            <h2>Saved Items</h2>
+            <button class="close-btn" onclick="toggleResults()">×</button>
+        </div>
+
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="like" onclick="switchResultTab('like')">
+                Yes (<span id="likeCount">0</span>)
+            </button>
+            <button class="panel-tab maybe" data-tab="maybe" onclick="switchResultTab('maybe')">
+                Maybe (<span id="maybeCount">0</span>)
+            </button>
+            <button class="panel-tab pass" data-tab="pass" onclick="switchResultTab('pass')">
+                No (<span id="passCount">0</span>)
+            </button>
+        </div>
+
+        <div class="panel-content" id="panelContent"></div>
+
+        <div class="panel-footer">
+            <div class="export-buttons">
+                <button class="export-btn csv" onclick="exportCSV()">Export CSV</button>
+                <button class="export-btn md" onclick="exportJSON()">Export JSON</button>
+                <button class="export-btn md" onclick="exportExcel()">Export Excel</button>
+                <button class="export-btn md" onclick="exportMarkdown()">Export Markdown</button>
+                <button class="export-btn md pro" onclick="showProModal()">
+                    Share Link <span class="pro-badge">PRO</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pro Modal -->
+    <div class="modal-overlay" id="proModal">
+        <div class="modal">
+            <h2>Upgrade to Pro</h2>
+            <p>Unlock powerful features for teams and power users</p>
+
+            <div class="pricing-card">
+                <div class="price">$5<span> /month</span></div>
+                <ul class="features-list">
+                    <li>Unlimited decks</li>
+                    <li>Unlimited items per deck</li>
+                    <li>Share decks with anyone</li>
+                    <li>Export to Notion & Sheets</li>
+                    <li>Analytics & insights</li>
+                    <li>Custom branding</li>
+                    <li>API access</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;">
+                    Start Free Trial
+                </button>
+            </div>
+
+            <p style="font-size: 0.8rem; color: var(--text-3);">
+                Free: 3 decks, 100 items, CSV/MD export
+            </p>
+
+            <button class="close-modal" onclick="closeProModal()">Maybe later</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentData = [];
+        let decisions = { like: [], maybe: [], pass: [] };
+        let currentTab = 'like';
+        let deckName = 'My Deck';
+        let titleField = 'name';
+        let descriptionField = 'description';
+        let categoryField = 'type';
+        let linkField = 'url';
+        let highlightField = 'amount';
+
+        // Demo Data
+        const demoData = {
+            grants: {
+                name: 'Grants & Hackathons 2026',
+                description: '40+ opportunities',
+                data: [
+                    { name: "AI Grant", type: "grant", amount: "$80K credits", deadline: "Rolling", description: "No-strings-attached credits from Nat Friedman. $30K Anthropic + $25K Modal + $15K OpenAI.", url: "https://aigrant.com" },
+                    { name: "WEEX AI Wars", type: "hackathon", amount: "$880K + Bentley", deadline: "Mar 3", description: "Largest AI trading hackathon. Alpha Track $200K, Risk Track $150K, Execution $150K.", url: "https://dorahacks.io" },
+                    { name: "ETHGlobal Cannes", type: "hackathon", amount: "$500K+", deadline: "Apr 3-5", description: "Premier Ethereum hackathon right after EthCC. Sponsor bounties from Polygon, Chainlink, Safe.", url: "https://ethglobal.com" },
+                    { name: "Starknet Seed", type: "grant", amount: "$25K STRK", deadline: "Rolling", description: "Foundation grant for MVPs. 6-12 month milestones. ZK-native applications.", url: "https://starknet.io/grants" },
+                    { name: "Base Builder", type: "grant", amount: "1-5 ETH", deadline: "Weekly", description: "Retroactive grants for shipped products. Via Talent Protocol.", url: "https://docs.base.org" },
+                    { name: "EthCC [9]", type: "event", amount: "~€500", deadline: "Mar 30 - Apr 2", description: "Biggest Ethereum conference in Europe. 6,500 attendees. Cannes, France.", url: "https://ethcc.io" },
+                    { name: "Paris Blockchain Week", type: "event", amount: "€1,199-€3,699", deadline: "Apr 15-16", description: "Institutional crypto. Tier 1 VCs. Carrousel du Louvre venue.", url: "https://parisblockchainweek.com" },
+                    { name: "Money20/20 Europe", type: "event", amount: "€1,500-€4,000", deadline: "Jun 2-4", description: "Biggest fintech conference. 8,500+ attendees.", url: "https://money2020.com" },
+                    { name: "Chainlink Convergence", type: "hackathon", amount: "$100K+", deadline: "TBA", description: "AI + Oracles. Cross-chain AI apps.", url: "https://chain.link" },
+                    { name: "Taiko Grants", type: "grant", amount: "$25M pool", deadline: "Rolling", description: "Type 1 zkEVM. Grants from $5K to $150K+.", url: "https://taiko.xyz" },
+                ]
+            },
+            jobs: {
+                name: 'Remote Tech Jobs',
+                description: 'Demo listings',
+                data: [
+                    { name: "Senior React Developer", type: "engineering", amount: "$150-180K", deadline: "Remote", description: "Build next-gen web apps. 5+ years React, TypeScript.", url: "#" },
+                    { name: "AI/ML Engineer", type: "engineering", amount: "$180-220K", deadline: "Remote", description: "Develop LLM applications. PyTorch, transformers.", url: "#" },
+                    { name: "Product Designer", type: "design", amount: "$120-150K", deadline: "Remote", description: "Shape user experiences. Figma, design systems.", url: "#" },
+                    { name: "DevOps Lead", type: "engineering", amount: "$160-190K", deadline: "Remote", description: "Scale infrastructure. Kubernetes, Terraform.", url: "#" },
+                    { name: "Smart Contract Dev", type: "web3", amount: "$170-200K", deadline: "Remote", description: "Build DeFi protocols. Solidity, Foundry.", url: "#" },
+                ]
+            },
+            products: {
+                name: 'Product Hunt Launches',
+                description: 'Demo products',
+                data: [
+                    { name: "Notion AI", type: "productivity", amount: "Free tier", deadline: "Available", description: "AI-powered writing assistant inside Notion.", url: "#" },
+                    { name: "Linear 2.0", type: "dev-tools", amount: "$8/user", deadline: "Available", description: "Issue tracking that developers love.", url: "#" },
+                    { name: "Raycast Pro", type: "productivity", amount: "$8/mo", deadline: "Available", description: "Supercharged launcher for Mac.", url: "#" },
+                    { name: "Arc Browser", type: "browser", amount: "Free", deadline: "Available", description: "Browser for how we use the internet.", url: "#" },
+                    { name: "Cursor IDE", type: "dev-tools", amount: "$20/mo", deadline: "Available", description: "AI-first code editor.", url: "#" },
+                ]
+            }
+        };
+
+        // Initialize
+        function init() {
+            setupUploadZone();
+            setupKeyboard();
+            setupSwipeGestures();
+        }
+
+        function setupUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            zone.addEventListener('click', () => input.click());
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+            });
+            input.addEventListener('change', (e) => { if (e.target.files[0]) processFile(e.target.files[0]); });
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                if (file.name.endsWith('.json')) {
+                    try {
+                        const data = JSON.parse(content);
+                        loadData(Array.isArray(data) ? data : data.data || [data], file.name.replace('.json', ''));
+                    } catch { alert('Invalid JSON'); }
+                } else if (file.name.endsWith('.csv')) {
+                    loadData(parseCSV(content), file.name.replace('.csv', ''));
+                } else if (file.name.endsWith('.md')) {
+                    loadData(parseMarkdown(content), file.name.replace('.md', ''));
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(content) {
+            const lines = content.trim().split('\n');
+            if (lines.length < 2) return [];
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            return lines.slice(1).map(line => {
+                const values = line.match(/(".*?"|[^,]+)/g) || [];
+                const item = {};
+                headers.forEach((h, i) => item[h] = (values[i] || '').replace(/"/g, '').trim());
+                return item;
+            });
+        }
+
+        function parseMarkdown(content) {
+            const items = [];
+            const sections = content.split(/^##\s+/m).filter(s => s.trim());
+
+            sections.forEach(section => {
+                const lines = section.trim().split('\n');
+                const titleLine = lines[0].replace(/^\d+\.\s*/, '').trim();
+                if (!titleLine) return;
+
+                const item = { name: titleLine };
+                let description = [];
+
+                lines.slice(1).forEach(line => {
+                    const bulletMatch = line.match(/^[-*]\s+\*\*(.+?):\*\*\s*(.+)$/);
+                    if (bulletMatch) {
+                        const key = bulletMatch[1].toLowerCase().trim();
+                        const value = bulletMatch[2].trim();
+                        item[key] = value;
+                    } else if (line.match(/^[-*]\s+\*\*(.+?)\*\*:\s*(.+)$/)) {
+                        const m = line.match(/^[-*]\s+\*\*(.+?)\*\*:\s*(.+)$/);
+                        item[m[1].toLowerCase().trim()] = m[2].trim();
+                    } else if (line.match(/^[-*]\s+(.+?):\s+(.+)$/)) {
+                        const m = line.match(/^[-*]\s+(.+?):\s+(.+)$/);
+                        item[m[1].toLowerCase().trim()] = m[2].trim();
+                    } else if (line.trim() && !line.startsWith('---') && !line.startsWith('#')) {
+                        description.push(line.trim());
+                    }
+                });
+
+                if (description.length && !item.description) {
+                    item.description = description.join(' ').substring(0, 300);
+                }
+
+                if (item.name) items.push(item);
+            });
+
+            return items;
+        }
+
+        function loadDemo(type) {
+            const demo = demoData[type];
+            loadData(demo.data, demo.name, demo.description);
+        }
+
+        function loadData(data, name = 'My Deck', description = '') {
+            currentData = data;
+            decisions = { like: [], maybe: [], pass: [] };
+            deckName = name;
+
+            if (data.length > 0) {
+                const keys = Object.keys(data[0]);
+                titleField = keys.find(k => ['name', 'title', 'Name', 'Title'].includes(k)) || keys[0];
+                descriptionField = keys.find(k => ['description', 'desc', 'Description'].includes(k)) || '';
+                categoryField = keys.find(k => ['type', 'category', 'Type'].includes(k)) || '';
+                linkField = keys.find(k => ['url', 'link', 'URL', 'Link'].includes(k)) || '';
+                highlightField = keys.find(k => ['amount', 'price', 'salary', 'Amount'].includes(k)) || '';
+            }
+
+            document.getElementById('deckName').textContent = name;
+            document.getElementById('deckDescription').textContent = description || `${data.length} items`;
+            showSwipeView();
+            renderCard();
+            updateProgress();
+            updateCounts();
+        }
+
+        function showUploadView() {
+            document.getElementById('uploadView').classList.add('active');
+            document.getElementById('swipeView').classList.remove('active');
+            document.getElementById('resultsToggle').style.display = 'none';
+        }
+
+        function showSwipeView() {
+            document.getElementById('uploadView').classList.remove('active');
+            document.getElementById('swipeView').classList.add('active');
+            document.getElementById('resultsToggle').style.display = 'flex';
+        }
+
+        function getCurrentItem() {
+            const decided = [...decisions.like, ...decisions.maybe, ...decisions.pass];
+            return currentData.find(item => !decided.includes(item));
+        }
+
+        function renderCard() {
+            const container = document.getElementById('cardContainer');
+            const item = getCurrentItem();
+
+            if (!item) {
+                container.innerHTML = `
+                    <div class="empty-state animate-in">
+                        <div class="empty-state-icon">✓</div>
+                        <h3>All done</h3>
+                        <p>You reviewed ${currentData.length} items</p>
+                        <button class="btn btn-primary" onclick="resetDeck()">Start Over</button>
+                    </div>`;
+                return;
+            }
+
+            const fields = Object.keys(item).filter(k => k !== titleField && k !== descriptionField && item[k]);
+
+            container.innerHTML = `
+                <div class="swipe-hint left">NO</div>
+                <div class="swipe-hint right">YES</div>
+                <div class="swipe-card animate-in">
+                    ${categoryField && item[categoryField] ? `<span class="card-category">${item[categoryField]}</span>` : ''}
+                    <h3 class="card-title">${item[titleField] || 'Untitled'}</h3>
+                    <div class="card-fields">
+                        ${fields.slice(0, 4).map(f => `
+                            <div class="card-field">
+                                <span class="field-label">${f}</span>
+                                <span class="field-value ${f === highlightField ? 'highlight' : ''}">${item[f]}</span>
+                            </div>`).join('')}
+                    </div>
+                    ${descriptionField && item[descriptionField] ? `<div class="card-description">${item[descriptionField]}</div>` : ''}
+                    ${linkField && item[linkField] ? `<a href="${item[linkField]}" target="_blank" class="card-link">Open link →</a>` : ''}
+                </div>`;
+        }
+
+        function swipe(decision) {
+            const item = getCurrentItem();
+            if (!item) return;
+
+            const card = document.querySelector('.swipe-card');
+            if (card) card.classList.add(decision === 'pass' ? 'swiping-left' : 'swiping-right');
+
+            decisions[decision].push(item);
+            setTimeout(() => { renderCard(); updateProgress(); updateCounts(); }, 200);
+        }
+
+        function updateProgress() {
+            const total = currentData.length;
+            const done = decisions.like.length + decisions.maybe.length + decisions.pass.length;
+            document.getElementById('progressFill').style.width = `${total ? (done/total)*100 : 0}%`;
+            document.getElementById('progressText').textContent = `${done}/${total}`;
+        }
+
+        function updateCounts() {
+            document.getElementById('savedCount').textContent = decisions.like.length;
+            document.getElementById('likeCount').textContent = decisions.like.length;
+            document.getElementById('maybeCount').textContent = decisions.maybe.length;
+            document.getElementById('passCount').textContent = decisions.pass.length;
+            renderResults();
+        }
+
+        function toggleResults() { document.getElementById('resultsPanel').classList.toggle('open'); }
+
+        function switchResultTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.panel-tab[data-tab="${tab}"]`).classList.add('active');
+            renderResults();
+        }
+
+        function renderResults() {
+            const content = document.getElementById('panelContent');
+            const items = decisions[currentTab];
+            if (!items.length) {
+                content.innerHTML = '<p style="text-align:center;color:var(--text-3);padding:40px;">No items yet</p>';
+                return;
+            }
+            content.innerHTML = items.map((item, i) => `
+                <div class="result-item">
+                    <h4>${item[titleField] || 'Untitled'}</h4>
+                    <p>${highlightField && item[highlightField] ? item[highlightField] : ''}${categoryField && item[categoryField] ? ' · '+item[categoryField] : ''}</p>
+                    <div class="result-item-actions">
+                        ${linkField && item[linkField] ? `<a href="${item[linkField]}" target="_blank">Open</a>` : ''}
+                        <button class="remove-btn" onclick="removeItem('${currentTab}',${i})">Remove</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function removeItem(tab, i) {
+            decisions[tab].splice(i, 1);
+            renderCard(); updateProgress(); updateCounts();
+        }
+
+        function resetDeck() {
+            decisions = { like: [], maybe: [], pass: [] };
+            renderCard(); updateProgress(); updateCounts();
+        }
+
+        function openCurrentLink() {
+            const item = getCurrentItem();
+            if (item && linkField && item[linkField]) window.open(item[linkField], '_blank');
+        }
+
+        function setupKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') swipe('pass');
+                if (e.key === 'ArrowRight') swipe('like');
+                if (e.key === 'ArrowDown') swipe('maybe');
+                if (e.key === 'ArrowUp') openCurrentLink();
+            });
+        }
+
+        function setupSwipeGestures() {
+            let startX = 0, currentX = 0, isDragging = false;
+            const container = document.getElementById('cardContainer');
+
+            const start = (x) => { isDragging = true; startX = x; const c = document.querySelector('.swipe-card'); if(c) c.style.transition = 'none'; };
+            const move = (x) => {
+                if (!isDragging) return;
+                const card = document.querySelector('.swipe-card');
+                if (!card) return;
+                currentX = x - startX;
+                card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.06}deg)`;
+                document.querySelector('.swipe-hint.left')?.classList.toggle('visible', currentX < -50);
+                document.querySelector('.swipe-hint.right')?.classList.toggle('visible', currentX > 50);
+            };
+            const end = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const card = document.querySelector('.swipe-card');
+                if (card) card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+                if (currentX < -80) swipe('pass');
+                else if (currentX > 80) swipe('like');
+                else if (card) card.style.transform = '';
+                document.querySelectorAll('.swipe-hint').forEach(h => h.classList.remove('visible'));
+                currentX = 0;
+            };
+
+            container.addEventListener('mousedown', e => start(e.clientX));
+            container.addEventListener('mousemove', e => move(e.clientX));
+            container.addEventListener('mouseup', end);
+            container.addEventListener('mouseleave', end);
+            container.addEventListener('touchstart', e => start(e.touches[0].clientX));
+            container.addEventListener('touchmove', e => move(e.touches[0].clientX));
+            container.addEventListener('touchend', end);
+        }
+
+        function exportCSV() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            const headers = Object.keys(items[0]);
+            let csv = headers.join(',') + '\n';
+            items.forEach(item => csv += headers.map(h => `"${(item[h]||'').toString().replace(/"/g,'""')}"`).join(',') + '\n');
+            download(csv, `${deckName}-yes.csv`, 'text/csv');
+        }
+
+        function exportMarkdown() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            let md = `# ${deckName}\n\n`;
+            items.forEach((item, i) => {
+                md += `## ${i+1}. ${item[titleField]||'Untitled'}\n\n`;
+                Object.keys(item).forEach(k => { if (k !== titleField && item[k]) md += `- **${k}:** ${item[k]}\n`; });
+                md += '\n---\n\n';
+            });
+            download(md, `${deckName}-yes.md`, 'text/markdown');
+        }
+
+        function exportJSON() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            const json = JSON.stringify(items, null, 2);
+            download(json, `${deckName}-yes.json`, 'application/json');
+        }
+
+        function exportExcel() {
+            const items = decisions.like;
+            if (!items.length) return alert('No items to export');
+            const headers = Object.keys(items[0]);
+
+            // Create XML-based Excel format (works in Excel, Google Sheets, etc.)
+            let xml = '<?xml version="1.0"?>\n';
+            xml += '<?mso-application progid="Excel.Sheet"?>\n';
+            xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
+            xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+            xml += '<Worksheet ss:Name="Yes">\n<Table>\n';
+
+            // Header row
+            xml += '<Row>\n';
+            headers.forEach(h => xml += `<Cell><Data ss:Type="String">${escapeXML(h)}</Data></Cell>\n`);
+            xml += '</Row>\n';
+
+            // Data rows
+            items.forEach(item => {
+                xml += '<Row>\n';
+                headers.forEach(h => xml += `<Cell><Data ss:Type="String">${escapeXML(item[h]||'')}</Data></Cell>\n`);
+                xml += '</Row>\n';
+            });
+
+            xml += '</Table>\n</Worksheet>\n</Workbook>';
+            download(xml, `${deckName}-yes.xls`, 'application/vnd.ms-excel');
+        }
+
+        function escapeXML(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function download(content, filename, type) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], { type }));
+            a.download = filename;
+            a.click();
+        }
+
+        function showProModal() { document.getElementById('proModal').classList.add('open'); }
+        function closeProModal() { document.getElementById('proModal').classList.remove('open'); }
+        document.getElementById('proModal').addEventListener('click', e => { if (e.target.id === 'proModal') closeProModal(); });
+
+        init();
+    </script>
+</body>
+</html>
