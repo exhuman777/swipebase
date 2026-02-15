@@ -7,7 +7,51 @@
 ╚══════╝ ╚══╝╚══╝ ╚═╝╚═╝     ╚══════╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
 ```
 
-# SwipeBase
+<p align="center">
+  <strong>SwipeBase</strong>
+</p>
+
+<p align="center">
+  <em>Swipe Through Any Data, Tinder-Style</em>
+</p>
+
+<p align="center">
+  <a href="swipebase.html">Lite</a> &middot;
+  <a href="swipebase-cloud.html">Cloud</a> &middot;
+  <a href="swipebase-docs.html">Docs</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/deps-Zero%20Dependencies-purple" alt="Zero Dependencies" />
+  <img src="https://img.shields.io/badge/input-CSV%20/%20JSON%20/%20MD-brightgreen" alt="CSV / JSON / MD" />
+  <img src="https://img.shields.io/badge/cloud-Supabase%20Sync-blue" alt="Supabase Sync" />
+  <img src="https://img.shields.io/badge/deploy-Vercel-orange" alt="Vercel" />
+</p>
+
+---
+
+**Import any dataset. Swipe right to keep, left to skip.**
+
+Tinder-style review UI for datasets. Import CSV, JSON, or Markdown. Swipe cards left/right to categorize. Export filtered results. Optional Supabase cloud sync for team collaboration.
+
+---
+
+## File Map
+
+```
+  swipebase/
+  README.md
+  package.json
+  swipebase-cloud.html
+  swipebase-docs.html
+  swipebase.html
+  vercel.json
+  supabase/
+    SETUP.md
+    schema.sql
+```
+
+---
 
 Swipe through any data. Tinder-style review UI for datasets.
 
