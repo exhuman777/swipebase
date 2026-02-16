@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YES NO — Prediction Market Discovery</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Swipe through prediction markets. Smart filtering, news on every card, AI analysis.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #000000; --bg-1: #0a0a0a; --bg-2: #111111; --bg-3: #1a1a1a; --bg-4: #222222; --bg-5: #2a2a2a;
+            --border: #333333; --border-light: #444444;
+            --text-0: #ffffff; --text-1: #f5f5f5; --text-2: #a0a0a0; --text-3: #666666;
+            --yes: #00d26a; --yes-dark: #00b359; --no: #ff4757; --no-dark: #e63946;
+            --maybe: #3b82f6; --accent: #8b5cf6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-1); color: var(--text-1); min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .content-wrapper { position: relative; z-index: 1; }
+
+        /* Header */
+        .header { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; text-decoration: none; }
+        .logo-mark { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 800; letter-spacing: 1px; }
+        .logo-y { color: var(--yes); } .logo-n { color: var(--no); } .logo-dim { color: var(--text-3); }
+        .header-nav { display: flex; gap: 4px; align-items: center; }
+        .nav-tab { padding: 6px 14px; border-radius: 8px; border: none; background: transparent; color: var(--text-2); font-family: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .nav-tab:hover { color: var(--text-1); background: var(--bg-3); }
+        .nav-tab.active { color: var(--text-0); background: var(--bg-4); }
+        .nav-tab .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--yes); color: #000; font-size: 0.6rem; font-weight: 700; margin-left: 4px; }
+
+        /* Landing */
+        .landing { max-width: 900px; margin: 0 auto; padding: 48px 20px 40px; text-align: center; }
+        .ascii-logo { font-family: 'JetBrains Mono', monospace; white-space: pre; display: inline-block; line-height: 1.1; margin-bottom: 20px; }
+        .ascii-yes { color: var(--yes); text-shadow: 0 0 20px rgba(0,210,106,0.25); }
+        .ascii-no { color: var(--no); text-shadow: 0 0 20px rgba(255,71,87,0.25); }
+        .ascii-sm { font-size: 0.55rem; letter-spacing: 1px; }
+        @media (min-width: 500px) { .ascii-sm { font-size: 0.75rem; } }
+        .landing-tagline { font-family: 'JetBrains Mono', monospace; color: var(--text-3); font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+        .landing-sub { color: var(--text-2); font-size: 0.92rem; margin-bottom: 32px; max-width: 460px; margin-left: auto; margin-right: auto; line-height: 1.5; }
+        .cursor-blink { display: inline-block; width: 2px; height: 1em; background: var(--yes); margin-left: 3px; vertical-align: text-bottom; animation: curBlink 1s step-end infinite; }
+        @keyframes curBlink { 50% { opacity: 0; } }
+        .search-bar { display: flex; gap: 8px; max-width: 480px; margin: 0 auto 44px; }
+        .search-bar input { flex: 1; padding: 12px 16px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; color: var(--text-1); font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .search-bar input:focus { border-color: var(--yes); }
+        .search-bar input::placeholder { color: var(--text-3); }
+        .search-bar button { padding: 12px 20px; background: var(--text-0); color: var(--bg-0); border: none; border-radius: 10px; font-family: inherit; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 44px; }
+        .cat-tile { padding: 18px 10px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .cat-tile:hover { border-color: var(--yes); background: rgba(0,210,106,0.04); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,210,106,0.1); }
+        .cat-tile .icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .cat-tile .label { font-size: 0.72rem; color: var(--text-2); font-weight: 500; }
+        /* Featured Collections */
+        .featured-section { margin-bottom: 32px; }
+        .featured-section h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-bottom: 12px; }
+        .featured-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+        .featured-row::-webkit-scrollbar { display: none; }
+        .featured-card { flex-shrink: 0; width: 160px; padding: 18px 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .featured-card:hover { border-color: var(--yes); background: rgba(0,210,106,0.04); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,210,106,0.1); }
+        .featured-card .fc-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .featured-card .fc-label { font-size: 0.82rem; font-weight: 600; color: var(--text-1); margin-bottom: 4px; }
+        .featured-card .fc-desc { font-size: 0.68rem; color: var(--text-3); line-height: 1.3; }
+
+        .trending-section h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-bottom: 12px; }
+        .trending-ticker { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+        .trending-ticker::-webkit-scrollbar { display: none; }
+        .trending-item { flex-shrink: 0; padding: 12px 16px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; min-width: 230px; max-width: 300px; cursor: pointer; transition: all 0.2s; }
+        .trending-item:hover { border-color: var(--text-3); transform: translateY(-1px); }
+        .trending-item .q { font-size: 0.82rem; color: var(--text-1); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .trending-item .meta { display: flex; gap: 10px; font-size: 0.72rem; color: var(--text-3); }
+        .trending-item .odds { color: var(--yes); font-weight: 600; }
+
+        /* Swipe View */
+        .swipe-view { display: none; flex-direction: column; align-items: center; padding: 20px 16px 16px; min-height: calc(100vh - 52px); }
+        .swipe-view.active { display: flex; }
+        .swipe-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 500px; margin-bottom: 12px; }
+        .swipe-category { font-size: 0.85rem; color: var(--text-2); font-weight: 500; }
+        .swipe-counter { font-size: 0.8rem; color: var(--text-3); }
+        .swipe-subfilters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+        .subfilter-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-3); color: var(--text-2); font-family: inherit; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; }
+        .subfilter-btn.active { border-color: var(--yes); color: var(--yes); background: rgba(0,210,106,0.08); }
+        .card-container { position: relative; width: 100%; max-width: 500px; min-height: 440px; display: flex; justify-content: center; align-items: center; }
+
+        /* Card */
+        .swipe-card { width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; cursor: grab; user-select: none; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease, box-shadow 0.2s ease; transform-origin: center bottom; will-change: transform, opacity; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .swipe-card:active { cursor: grabbing; }
+        .swipe-card.dragging-left { box-shadow: -8px 0 40px rgba(255,71,87,0.4); border-color: var(--no); }
+        .swipe-card.dragging-right { box-shadow: 8px 0 40px rgba(0,210,106,0.4); border-color: var(--yes); }
+        .swipe-card.exit-left { transform: translateX(-150%) rotate(-25deg) scale(0.9) !important; opacity: 0 !important; transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.4s ease; pointer-events: none; }
+        .swipe-card.exit-right { transform: translateX(150%) rotate(25deg) scale(0.9) !important; opacity: 0 !important; transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.4s ease; pointer-events: none; }
+        .swipe-card.exit-down { transform: translateY(100%) scale(0.8) !important; opacity: 0 !important; transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.3s ease; pointer-events: none; }
+        .swipe-card.entering { animation: cardEnter 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes cardEnter { 0% { opacity: 0; transform: scale(0.9) translateY(30px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .card-image { width: 100%; height: 180px; object-fit: cover; object-position: center 30%; display: block; }
+        .card-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .card-head-left { flex: 1; }
+        .card-cat-pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; background: var(--bg-4); color: var(--text-2); }
+        .card-question { font-size: 1.15rem; font-weight: 600; line-height: 1.3; color: var(--text-0); }
+        .card-highlight { background: rgba(0,210,106,0.12); border: 1px solid rgba(0,210,106,0.3); border-radius: 10px; padding: 6px 12px; text-align: center; flex-shrink: 0; }
+        .card-highlight-value { font-size: 1.1rem; font-weight: 700; color: var(--yes); }
+        .card-highlight-label { font-size: 0.6rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-body { padding: 16px 22px 18px; max-height: 420px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .card-body::-webkit-scrollbar { width: 4px; }
+        .card-body::-webkit-scrollbar-track { background: var(--bg-3); border-radius: 2px; }
+        .card-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+        .card-odds-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .odds-box { padding: 12px; border-radius: 10px; text-align: center; font-weight: 700; font-size: 1.4rem; }
+        .odds-box.yes { background: rgba(0,210,106,0.1); border: 1px solid rgba(0,210,106,0.25); color: var(--yes); }
+        .odds-box.no { background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.25); color: var(--no); }
+        .odds-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; margin-bottom: 2px; }
+        .card-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+        .card-field { background: var(--bg-3); padding: 10px 12px; border-radius: 10px; }
+        .field-label { font-size: 0.65rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .field-value { font-size: 0.88rem; color: var(--text-1); font-weight: 500; }
+        .field-value.urgent { color: var(--no); }
+        .card-analyze-btn { display: block; width: 100%; padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(6px); border-radius: 10px; color: var(--text-1); cursor: pointer; font-family: inherit; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; margin-bottom: 14px; }
+        .card-analyze-btn:hover { border-color: var(--yes); background: rgba(0,210,106,0.08); transform: translateY(-1px); }
+
+        /* Card sections (SwipeBase style) */
+        .card-section { margin-bottom: 18px; }
+        .card-section-header { font-size: 0.78rem; color: #fff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 6px; }
+        .card-section-content { padding: 10px 14px; border-radius: 0 10px 10px 0; font-size: 0.82rem; color: var(--text-2); line-height: 1.5; }
+        .resolution-content { border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 10px 10px 0; background: rgba(255,255,255,0.03); font-size: 0.82rem; color: var(--text-2); line-height: 1.55; }
+        .card-section-content.info { background: rgba(59,130,246,0.08); border-left: 3px solid var(--maybe); }
+        .card-section-content.highlight { background: rgba(0,210,106,0.08); border-left: 3px solid var(--yes); }
+        .card-section-content.tip { background: rgba(255,165,2,0.08); border-left: 3px solid #ffa502; }
+        .card-section-content.warning { background: rgba(255,71,87,0.08); border-left: 3px solid var(--no); }
+
+        /* News on card */
+        .card-news { margin-bottom: 12px; }
+        .card-news-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .card-news-item:last-child { border-bottom: none; }
+        .card-news-item a { font-size: 0.8rem; color: var(--text-2); text-decoration: none; line-height: 1.35; transition: color 0.2s; flex: 1; }
+        .card-news-item a:hover { color: var(--yes); }
+        .card-news-item .age { font-size: 0.65rem; color: var(--text-3); flex-shrink: 0; white-space: nowrap; }
+        .card-news-loading { font-size: 0.75rem; color: var(--text-3); padding: 4px 0; }
+
+        .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 22px; border-top: 1px solid var(--border); font-size: 0.78rem; }
+        .card-footer-link { color: var(--text-3); text-decoration: none; transition: color 0.2s; }
+        .card-footer-link:hover { color: var(--yes); }
+        .card-footer-count { color: var(--text-3); }
+
+        /* Swipe Hints */
+        .swipe-hint { position: absolute; top: 50%; transform: translateY(-50%); padding: 12px 20px; border-radius: 10px; font-size: 1rem; font-weight: 700; opacity: 0; transition: opacity 0.15s; pointer-events: none; letter-spacing: 1px; z-index: 10; }
+        .swipe-hint.left { left: -80px; background: var(--no); color: var(--text-0); transform: translateY(-50%) rotate(-12deg); }
+        .swipe-hint.right { right: -80px; background: var(--yes); color: var(--bg-0); transform: translateY(-50%) rotate(12deg); }
+        .swipe-hint.visible { opacity: 1; }
+        @media (max-width: 600px) { .swipe-hint.left { left: -10px; font-size: 0.8rem; padding: 8px 14px; } .swipe-hint.right { right: -10px; font-size: 0.8rem; padding: 8px 14px; } }
+
+        /* Action Buttons */
+        .actions { display: flex; justify-content: center; gap: 16px; margin-top: 24px; }
+        .action-btn { border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; font-size: 1.5rem; }
+        .action-btn:hover { transform: scale(1.1); } .action-btn:active { transform: scale(0.95); }
+        .action-btn.pass { width: 64px; height: 64px; background: var(--bg-3); border: 2px solid var(--no); color: var(--no); }
+        .action-btn.pass:hover { background: var(--no); color: var(--text-0); }
+        .action-btn.watch { width: 52px; height: 52px; background: var(--bg-3); border: 2px solid var(--maybe); color: var(--maybe); font-size: 1.2rem; }
+        .action-btn.watch:hover { background: var(--maybe); color: var(--text-0); }
+        .action-btn.like { width: 64px; height: 64px; background: var(--bg-3); border: 2px solid var(--yes); color: var(--yes); }
+        .action-btn.like:hover { background: var(--yes); color: var(--bg-0); }
+        .action-btn.pulsing { animation: btnPulse 0.3s ease; }
+        @keyframes btnPulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        .swipe-empty { text-align: center; padding: 60px 20px; color: var(--text-3); }
+        .swipe-empty h3 { font-size: 1.1rem; color: var(--text-2); margin-bottom: 8px; }
+
+        /* Fullcard Overlay */
+        .fullcard-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .fullcard-overlay.show { display: flex; }
+        .fullcard { background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: modalEnter 0.3s ease; }
+        .fullcard-close { position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 50%; background: var(--bg-3); border: 1px solid var(--border); color: var(--text-1); font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2001; }
+        .fullcard-close:hover { background: var(--bg-4); }
+        .fullcard-image { width: 100%; height: 240px; object-fit: cover; object-position: center 25%; display: block; border-radius: 20px 20px 0 0; }
+        .fullcard-body { padding: 24px; }
+        .fullcard-odds-bar { height: 8px; background: var(--bg-4); border-radius: 4px; overflow: hidden; display: flex; margin: 12px 0 16px; }
+        .fullcard-odds-yes { background: var(--yes); } .fullcard-odds-no { background: var(--no); }
+        .fullcard-link { display: block; width: 100%; padding: 12px 20px; background: var(--yes); color: #000; border: none; border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 0.9rem; text-align: center; cursor: pointer; text-decoration: none; margin-top: 16px; }
+        .fullcard-link:hover { background: var(--yes-dark); transform: translateY(-1px); }
+        .fullcard-actions { display: flex; gap: 12px; padding: 20px; border-top: 1px solid var(--border); justify-content: center; position: sticky; bottom: 0; background: var(--bg-2); border-radius: 0 0 20px 20px; }
+        .fullcard-actions .action-btn { width: 56px; height: 56px; font-size: 1.3rem; }
+
+        /* Leaderboard */
+        .lb-section { margin-bottom: 32px; }
+        .lb-section h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-bottom: 12px; }
+        .lb-toggle { display: inline-flex; gap: 2px; background: var(--bg-3); border-radius: 8px; padding: 2px; margin-bottom: 10px; }
+        .lb-toggle button { padding: 5px 12px; border-radius: 6px; border: none; background: transparent; color: var(--text-3); font-family: inherit; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; }
+        .lb-toggle button.active { background: var(--bg-4); color: var(--text-1); }
+        .lb-table { width: 100%; border-collapse: collapse; }
+        .lb-table th { text-align: left; padding: 6px 10px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); border-bottom: 1px solid var(--border); }
+        .lb-table td { padding: 8px 10px; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .lb-table tr:hover { background: var(--bg-3); }
+        .lb-rank { color: var(--text-3); font-weight: 600; width: 30px; }
+        .lb-name { color: var(--text-2); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+        .lb-name a { color: var(--text-2); text-decoration: none; }
+        .lb-name a:hover { color: var(--accent); text-decoration: underline; }
+        .lb-pnl { font-weight: 600; text-align: right; }
+        .lb-pnl.pos { color: var(--yes); }
+        .lb-pnl.neg { color: var(--no); }
+        .lb-loading { padding: 12px; font-size: 0.78rem; color: var(--text-3); text-align: center; }
+
+        /* Grid View */
+        .grid-view { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+        .grid-view.active { display: block; }
+        .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 4px; }
+        .filter-label { font-size: 0.7rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        .filter-input { padding: 6px 10px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-1); font-family: inherit; font-size: 0.8rem; width: 70px; outline: none; }
+        .filter-input:focus { border-color: var(--yes); }
+        .filter-toggle { padding: 6px 12px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-2); font-family: inherit; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; }
+        .filter-toggle.active { border-color: var(--yes); color: var(--yes); background: rgba(0,210,106,0.08); }
+        .filter-sort { margin-left: auto; padding: 6px 12px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-1); font-family: inherit; font-size: 0.8rem; cursor: pointer; outline: none; }
+        .grid-table { width: 100%; border-collapse: collapse; }
+        .grid-table th { text-align: left; padding: 10px 12px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; white-space: nowrap; }
+        .grid-table th:hover { color: var(--text-2); }
+        .grid-table td { padding: 10px 12px; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+        .grid-table tr:hover { background: var(--bg-2); }
+        .grid-table .q-cell { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+        .grid-table .q-cell:hover { color: var(--yes); }
+        .grid-table .yes-cell { color: var(--yes); font-weight: 600; }
+        .grid-table .vol-cell { color: var(--text-2); } .grid-table .liq-cell { color: var(--text-3); }
+        .grid-table .days-cell { color: var(--text-2); } .grid-table .days-cell.urgent { color: var(--no); font-weight: 600; }
+        .grid-table .star-cell { cursor: pointer; opacity: 0.3; font-size: 1rem; transition: opacity 0.2s; }
+        .grid-table .star-cell:hover, .grid-table .star-cell.active { opacity: 1; }
+        .grid-table .analyze-cell { cursor: pointer; color: var(--text-3); font-size: 0.78rem; transition: color 0.2s; }
+        .grid-table .analyze-cell:hover { color: var(--yes); }
+        .grid-table .cat-cell { font-size: 0.68rem; white-space: nowrap; }
+        .grid-table .cat-cell .card-cat-pill { padding: 3px 8px; font-size: 0.65rem; }
+        .grid-cards { display: none; }
+        .grid-card-item { padding: 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+        .grid-card-item:hover { border-color: var(--text-3); }
+        .grid-card-item .gci-q { font-size: 0.88rem; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+        .grid-card-item .gci-row { display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-3); }
+        .grid-card-item .gci-yes { color: var(--yes); font-weight: 600; }
+        @media (max-width: 700px) { .grid-table { display: none; } .grid-cards { display: block; } .category-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        /* Watchlist */
+        .watchlist-view { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
+        .watchlist-view.active { display: block; }
+        .watchlist-view h2 { font-size: 1.1rem; margin-bottom: 16px; }
+        .watchlist-empty { text-align: center; padding: 60px 20px; color: var(--text-3); }
+        .watchlist-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 6px; transition: border-color 0.2s; }
+        .watchlist-item:hover { border-color: var(--text-3); }
+        .watchlist-item .wi-q { flex: 1; font-size: 0.85rem; cursor: pointer; } .watchlist-item .wi-q:hover { color: var(--yes); }
+        .watchlist-item .wi-odds { color: var(--yes); font-weight: 600; font-size: 0.85rem; }
+        .watchlist-item .wi-remove { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 0.9rem; padding: 4px; transition: color 0.2s; }
+        .watchlist-item .wi-remove:hover { color: var(--no); }
+
+        /* History */
+        .history-view { display: none; padding: 20px; max-width: 700px; margin: 0 auto; }
+        .history-view.active { display: block; }
+        .history-view h2 { font-size: 1.1rem; margin-bottom: 16px; }
+        .history-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .history-bar .hb-stat { font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--border); }
+        .history-bar .hb-export { background: var(--yes); color: #000; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.78rem; cursor: pointer; margin-left: auto; }
+        .history-bar .hb-clear { background: none; border: 1px solid var(--border); color: var(--text-3); padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; cursor: pointer; }
+        .history-bar .hb-clear:hover { border-color: var(--no); color: var(--no); }
+        .history-empty { text-align: center; padding: 60px 20px; color: var(--text-3); }
+        .history-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 5px; }
+        .history-item .hi-dec { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; min-width: 52px; text-align: center; text-transform: uppercase; }
+        .history-item .hi-dec.interested { background: rgba(0,210,106,0.15); color: var(--yes); }
+        .history-item .hi-dec.skip { background: rgba(255,71,87,0.15); color: var(--no); }
+        .history-item .hi-dec.watch { background: rgba(59,130,246,0.15); color: var(--accent); }
+        .history-item .hi-q { flex: 1; font-size: 0.83rem; }
+        .history-item .hi-odds { color: var(--yes); font-weight: 600; font-size: 0.83rem; }
+        .history-item .hi-time { font-size: 0.7rem; color: var(--text-3); }
+
+        /* About */
+        .about-view { display: none; padding: 40px 20px; max-width: 800px; margin: 0 auto; }
+        .about-view.active { display: block; }
+        .about-view h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; background: linear-gradient(135deg, var(--yes), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .about-view h2 { font-size: 1.3rem; font-weight: 700; margin-top: 32px; margin-bottom: 12px; }
+        .about-view p { font-size: 0.95rem; line-height: 1.7; color: var(--text-2); margin-bottom: 16px; }
+        .about-view ul { padding-left: 24px; margin-bottom: 16px; }
+        .about-view li { font-size: 0.9rem; line-height: 1.7; color: var(--text-2); margin-bottom: 8px; }
+        .about-view code { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: var(--bg-3); padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+        .about-view a { color: var(--yes); text-decoration: none; } .about-view a:hover { text-decoration: underline; }
+        .about-meth { background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; margin-top: 24px; }
+        .about-meth-item { margin-bottom: 16px; }
+        .about-meth-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-3); margin-bottom: 4px; }
+        .about-meth-text { font-size: 0.88rem; line-height: 1.6; color: var(--text-2); }
+
+        /* Tag Picker */
+        .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 3000; display: none; align-items: flex-end; justify-content: center; }
+        .picker-overlay.show { display: flex; }
+        .picker-sheet { background: var(--bg-1); border: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; padding: 24px 20px 32px; animation: sheetUp 0.3s ease; }
+        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .picker-title { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .picker-close { background: var(--bg-3); border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; color: var(--text-2); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .picker-close:hover { background: var(--bg-4); color: var(--text-1); }
+        .picker-desc { font-size: 0.82rem; color: var(--text-3); margin-bottom: 16px; line-height: 1.4; }
+        .picker-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .picker-tag { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-3); color: var(--text-2); font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .picker-tag:hover { border-color: var(--text-3); color: var(--text-1); }
+        .picker-tag.selected { border-color: var(--yes); color: var(--yes); background: rgba(0,210,106,0.1); }
+        .picker-tag .tag-count { font-size: 0.68rem; color: var(--text-3); margin-left: 4px; }
+        .picker-actions { display: flex; gap: 10px; }
+        .picker-btn { flex: 1; padding: 14px 20px; border-radius: 12px; border: none; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .picker-btn.primary { background: var(--yes); color: #000; }
+        .picker-btn.primary:hover { background: var(--yes-dark); transform: translateY(-1px); }
+        .picker-btn.secondary { background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border); }
+        .picker-btn.secondary:hover { border-color: var(--text-3); color: var(--text-1); }
+        .picker-selected-info { font-size: 0.75rem; color: var(--text-3); margin-bottom: 12px; min-height: 18px; }
+        .mix-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--accent); background: rgba(139,92,246,0.08); color: var(--accent); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .mix-btn:hover { background: var(--accent); color: #fff; }
+
+        /* Analysis Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-box { background: var(--bg-2); border: 1px solid var(--border-light); border-radius: 20px; width: 92%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 24px; animation: modalEnter 0.3s ease; }
+        @keyframes modalEnter { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; line-height: 1.3; }
+        .poly-analysis-section { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.08); }
+        .poly-analysis-section h4 { font-size: 0.8rem; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .poly-analysis-section p, .poly-analysis-section li { font-size: 0.8rem; color: var(--text-2); line-height: 1.5; }
+        .poly-analysis-section a { color: var(--yes); text-decoration: none; } .poly-analysis-section a:hover { text-decoration: underline; }
+        .poly-bias-tag { display: inline-block; padding: 3px 8px; background: rgba(255,71,87,0.15); border-radius: 6px; font-size: 0.72rem; color: #ff6b7a; margin: 2px; }
+        .poly-mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .poly-mc-stat { background: var(--bg-4); border-radius: 8px; padding: 8px 10px; text-align: center; }
+        .poly-mc-stat .label { font-size: 0.68rem; color: var(--text-3); }
+        .poly-mc-stat .value { font-size: 1rem; font-weight: 600; color: var(--text-1); }
+
+        /* Toast + Loading */
+        .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .toast { padding: 10px 20px; border-radius: 10px; font-size: 0.82rem; font-weight: 500; animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; pointer-events: none; }
+        .toast.success { background: var(--yes); color: #000; } .toast.error { background: var(--no); color: #fff; }
+        .toast.info { background: var(--bg-4); color: var(--text-1); border: 1px solid var(--border); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; }
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--yes); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .swipe-card { border-radius: 16px; } .card-head { padding: 16px 18px 12px; } .card-body { padding: 14px 18px 16px; }
+            .card-question { font-size: 1.05rem; } .card-image { height: 140px; } .fullcard-image { height: 200px; }
+            .fullcard-body { padding: 20px; } .fullcard-close { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 1.3rem; }
+            .swipe-card::after { content: 'Tap to expand'; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--bg-4); padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; color: var(--text-3); opacity: 0.6; pointer-events: none; }
+        }
+    </style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="content-wrapper">
+<div class="header">
+    <a class="logo" onclick="navigate('landing')"><span class="logo-mark"><span class="logo-y">YES</span><span class="logo-dim">/</span><span class="logo-n">NO</span></span></a>
+    <div class="header-nav">
+        <button class="nav-tab" id="navSwipe" onclick="navigate('swipe')">Swipe</button>
+        <button class="nav-tab" id="navGrid" onclick="navigate('grid')">Grid</button>
+        <button class="nav-tab" id="navWatch" onclick="navigate('watchlist')">Watch <span class="badge" id="watchBadge" style="display:none;">0</span></button>
+        <button class="nav-tab" id="navHistory" onclick="navigate('history')">History <span class="badge" id="historyBadge" style="display:none;">0</span></button>
+        <button class="nav-tab" id="navAbout" onclick="navigate('about')">About</button>
+    </div>
+</div>
+
+<div class="landing" id="viewLanding">
+    <div class="landing-hero">
+        <div class="ascii-logo">
+<span class="ascii-yes ascii-sm"> __   __ ___  ___ </span>   <span class="ascii-no ascii-sm"> _  _  ___  </span>
+<span class="ascii-yes ascii-sm"> \ \ / /| __|/ __|</span>   <span class="ascii-no ascii-sm">| \| |/ _ \ </span>
+<span class="ascii-yes ascii-sm">  \ V / | _| \__ \</span>   <span class="ascii-no ascii-sm">| .` | (_) |</span>
+<span class="ascii-yes ascii-sm">   |_|  |___||___/</span>   <span class="ascii-no ascii-sm">|_|\_|\___/ </span>
+        </div>
+        <div class="landing-tagline">prediction market discovery<span class="cursor-blink"></span></div>
+        <p class="landing-sub">Swipe through markets. Smart filters, news on every card, AI analysis.</p>
+    </div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search markets..." onkeydown="if(event.key==='Enter')searchMarkets()">
+        <button onclick="searchMarkets()">Search</button>
+    </div>
+    <div class="featured-section" id="featuredSection"></div>
+    <div class="category-grid" id="categoryGrid"></div>
+    <div style="text-align:center;margin-bottom:24px;"><button class="mix-btn" onclick="openTagPicker()">Mix Categories</button></div>
+    <div class="trending-section"><h3>Trending Now</h3><div class="trending-ticker" id="trendingTicker"><div style="padding:20px;color:var(--text-3);font-size:0.8rem;">Loading trending markets...</div></div></div>
+    <div class="lb-section" id="landingLeaderboard" style="margin-top:32px;"></div>
+</div>
+
+<div class="swipe-view" id="viewSwipe">
+    <div class="swipe-header"><span class="swipe-category" id="swipeCatLabel"></span><span class="swipe-counter" id="swipeCounter"></span></div>
+    <div class="swipe-subfilters" id="swipeSubfilters"></div>
+    <div class="card-container" id="cardContainer"></div>
+    <div class="actions">
+        <button class="action-btn pass" onclick="doSwipe('left')" title="Skip">&#10005;</button>
+        <button class="action-btn watch" id="undoBtn" onclick="undoSwipe()" title="Undo" style="opacity:0.3;">&#x21A9;</button>
+        <button class="action-btn watch" onclick="doSwipe('down')" title="Watchlist">&#9733;</button>
+        <button class="action-btn like" onclick="doSwipe('right')" title="Interested">&#10003;</button>
+    </div>
+</div>
+
+<div class="fullcard-overlay" id="fullcardOverlay" onclick="if(event.target===this)closeFullCard()">
+    <button class="fullcard-close" onclick="closeFullCard()">&#10005;</button>
+    <div class="fullcard" id="fullcardContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<div class="grid-view" id="viewGrid">
+    <div class="filter-bar">
+        <div class="filter-group"><span class="filter-label">Prob</span><input class="filter-input" id="filterProbMin" type="number" min="0" max="100" placeholder="0%" oninput="applyFilters()"><span style="color:var(--text-3);">-</span><input class="filter-input" id="filterProbMax" type="number" min="0" max="100" placeholder="100%" oninput="applyFilters()"></div>
+        <div class="filter-group"><span class="filter-label">Vol min</span><input class="filter-input" id="filterVolMin" type="number" min="0" placeholder="$0" oninput="applyFilters()"></div>
+        <div class="filter-group"><span class="filter-label">Liq min</span><input class="filter-input" id="filterLiqMin" type="number" min="0" placeholder="$0" oninput="applyFilters()"></div>
+        <button class="filter-toggle" id="filterEnding" onclick="toggleFilter('ending')">Ending Soon</button>
+        <select class="filter-sort" id="filterSort" onchange="applyFilters()"><option value="volume">Sort: Volume</option><option value="liquidity">Sort: Liquidity</option><option value="prob_high">Sort: Prob High</option><option value="prob_low">Sort: Prob Low</option><option value="ending">Sort: Ending Soon</option></select>
+    </div>
+    <table class="grid-table" id="gridTable"><thead><tr><th>Cat</th><th onclick="sortGrid('question')">Question</th><th onclick="sortGrid('yes')">YES%</th><th onclick="sortGrid('volume')">Volume</th><th onclick="sortGrid('liquidity')">Liquidity</th><th onclick="sortGrid('days')">Days</th><th>&#9733;</th><th>Analyze</th></tr></thead><tbody id="gridBody"></tbody></table>
+    <div class="grid-cards" id="gridCards"></div>
+</div>
+
+<div class="watchlist-view" id="viewWatchlist"><h2>Watchlist</h2><div id="watchlistContent"></div></div>
+
+<div class="history-view" id="viewHistory"><h2>Swipe History</h2><div class="history-bar" id="historyBar"></div><div id="historyContent"></div></div>
+
+<div class="about-view" id="viewAbout">
+    <h1>About YES/NO</h1>
+    <p>YES/NO is a prediction market discovery tool. Browse, analyze, and track markets on Polymarket. Built for traders who want edge.</p>
+    <h2>Features</h2>
+    <ul>
+        <li><strong>Smart Categories:</strong> 17 categories — trending, politics, crypto, AI, sports, geopolitics, and more.</li>
+        <li><strong>Swipe Interface:</strong> Left to skip, right to save, star button for watchlist, undo to go back. Tap any card to expand.</li>
+        <li><strong>News Integration:</strong> Every card shows latest relevant news via Brave Search.</li>
+        <li><strong>AI Analysis:</strong> Deep analysis with Groq AI + bias checks + Monte Carlo simulation.</li>
+        <li><strong>Smart Filters:</strong> Filter by probability, volume, liquidity, ending date.</li>
+    </ul>
+    <h2>Methodology</h2>
+    <div class="about-meth">
+        <div class="about-meth-item"><div class="about-meth-label">Data Source</div><div class="about-meth-text">Real-time data from Polymarket's Gamma API. Includes odds, volume, liquidity, resolution dates, images, 24h price changes, and order book data.</div></div>
+        <div class="about-meth-item"><div class="about-meth-label">News</div><div class="about-meth-text">Brave Search API queries for each market — filtered for relevance and recency (past 7 days).</div></div>
+        <div class="about-meth-item"><div class="about-meth-label">AI Analysis</div><div class="about-meth-text">Groq's LLaMA 3.3 70B evaluates market fundamentals + news sentiment. Returns verdict, confidence (1-10), key factors, edge assessment, and contrarian take.</div></div>
+        <div class="about-meth-item"><div class="about-meth-label">Bias Detection</div><div class="about-meth-text">Identifies anchoring, availability heuristic, recency bias, ambiguity aversion, and herding — common biases that misprice prediction markets.</div></div>
+        <div class="about-meth-item"><div class="about-meth-label">Monte Carlo</div><div class="about-meth-text">10,000 simulations with volume-adjusted noise. Produces simulated probability, expected value, Kelly fraction (optimal bet sizing), and 95% confidence interval.</div></div>
+    </div>
+    <h2>Built By</h2>
+    <p>Created by <a href="https://exhuman.neocities.org" target="_blank">Exhuman</a> + Rufus. Powered by Polymarket, Brave Search, Groq AI.</p>
+</div>
+
+<div class="picker-overlay" onclick="if(event.target===this)closeTagPicker()">
+    <div class="picker-sheet">
+        <div class="picker-header"><span class="picker-title">Mix Categories</span><button class="picker-close" onclick="closeTagPicker()">&#10005;</button></div>
+        <p class="picker-desc">Select multiple categories to create a custom mixed deck.</p>
+        <div class="picker-selected-info">Select categories to mix</div>
+        <div class="picker-tags"></div>
+        <div class="picker-actions"><button class="picker-btn secondary" onclick="closeTagPicker()">Cancel</button><button class="picker-btn primary" onclick="applyTagPicker()">Start Swiping</button></div>
+    </div>
+</div>
+<div class="modal-overlay" id="analysisModal" onclick="if(event.target===this)closeAnalysis()"><div class="modal-box" id="analysisContent"></div></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
+<div class="toast-container" id="toastContainer"></div>
+<canvas id="confettiCanvas"></canvas>
+</div>
+
+<script>
+// STATE
+let markets=[],filteredMarkets=[],currentIndex=0,currentCategory='',currentView='landing',watchlist=JSON.parse(localStorage.getItem('yn_watchlist')||'[]'),swipeDecisions=JSON.parse(localStorage.getItem('yn_decisions')||'[]'),newsCache={},imageCache={},bgAnimId=null,activeSubFilter=null,useBraveImages=false;
+
+// CATEGORY COLORS
+const CAT_COLORS={
+    trending:[{r:255,g:140,b:0},{r:232,g:135,b:74},{r:255,g:107,b:53},{r:255,g:170,b:68},{r:200,g:80,b:40}],
+    sports:[{r:0,g:210,b:106},{r:16,g:185,b:129},{r:52,g:211,b:153},{r:110,g:231,b:183},{r:0,g:179,b:89}],
+    politics:[{r:59,g:130,b:246},{r:37,g:99,b:235},{r:96,g:165,b:250},{r:29,g:78,b:216},{r:59,g:130,b:200}],
+    elections:[{r:59,g:130,b:246},{r:37,g:99,b:235},{r:99,g:102,b:241},{r:96,g:165,b:250},{r:30,g:64,b:175}],
+    crypto:[{r:139,g:92,b:246},{r:124,g:58,b:237},{r:167,g:139,b:250},{r:109,g:40,b:217},{r:192,g:132,b:252}],
+    ai:[{r:6,g:182,b:212},{r:34,g:211,b:238},{r:103,g:232,b:249},{r:8,g:145,b:178},{r:22,g:78,b:99}],
+    entertainment:[{r:236,g:72,b:153},{r:244,g:114,b:182},{r:219,g:39,b:119},{r:190,g:24,b:93},{r:251,g:146,b:60}],
+    culture:[{r:20,g:184,b:166},{r:45,g:212,b:191},{r:94,g:234,b:212},{r:15,g:148,b:136},{r:13,g:128,b:120}],
+    geopolitics:[{r:239,g:68,b:68},{r:220,g:38,b:38},{r:248,g:113,b:113},{r:185,g:28,b:28},{r:255,g:100,b:100}],
+    science:[{r:99,g:102,b:241},{r:129,g:140,b:248},{r:67,g:56,b:202},{r:79,g:70,b:229},{r:165,g:180,b:252}],
+    economy:[{r:245,g:158,b:11},{r:251,g:191,b:36},{r:217,g:119,b:6},{r:180,g:83,b:9},{r:252,g:211,b:77}],
+    ending:[{r:249,g:115,b:22},{r:251,g:146,b:60},{r:234,g:88,b:12},{r:194,g:65,b:12},{r:255,g:160,b:80}],
+    highvol:[{r:30,g:64,b:175},{r:59,g:130,b:246},{r:37,g:99,b:235},{r:96,g:165,b:250},{r:29,g:78,b:216}],
+    newyork:[{r:234,g:179,b:8},{r:250,g:204,b:21},{r:253,g:224,b:71},{r:202,g:138,b:4},{r:161,g:98,b:7}],
+    eu:[{r:0,g:51,b:153},{r:0,g:85,b:204},{r:51,g:119,b:221},{r:0,g:40,b:120},{r:30,g:80,b:170}],
+    china:[{r:220,g:38,b:38},{r:185,g:28,b:28},{r:248,g:113,b:113},{r:153,g:27,b:27},{r:255,g:71,b:87}],
+    tossups:[{r:156,g:163,b:175},{r:209,g:213,b:219},{r:107,g:114,b:128},{r:75,g:85,b:99},{r:229,g:231,b:235}],
+    celebrity:[{r:255,g:215,b:0},{r:255,g:140,b:0},{r:255,g:105,b:180},{r:218,g:165,b:32},{r:255,g:69,b:0}],
+    awards:[{r:255,g:215,b:0},{r:218,g:165,b:32},{r:184,g:134,b:11},{r:255,g:193,b:37},{r:255,g:165,b:0}],
+    search:[{r:139,g:92,b:246},{r:99,g:102,b:241},{r:167,g:139,b:250},{r:109,g:40,b:217},{r:192,g:132,b:252}],
+    shared:[{r:245,g:158,b:11},{r:139,g:92,b:246},{r:59,g:130,b:246},{r:0,g:210,b:106},{r:255,g:71,b:87}]
+};
+
+// CATEGORIES
+const GAMMA_BASE='/gamma';
+const _sportKw=/\b(nfl|nba|mlb|nhl|ufc|mma|premier league|la liga|serie a|bundesliga|ligue 1|champions league|super bowl|touchdown|quarterback|playoff|championship|coach|draft pick|traded|retire|suspended|arrested|wedding|dating|relationship|pregnant)\b/i;
+const _nyKw=/\b(new york|nyc|ny\s|manhattan|brooklyn|bronx|queens|wall street)\b/i;
+const _euKw=/\b(eu\b|europe|european union|brussels|eurozone|ecb|euro\b|macron|scholz|von der leyen)\b/i;
+const _cnKw=/\b(china|chinese|beijing|xi jinping|ccp|shanghai|taiwan|pla)\b/i;
+const _celebKw=/\b(kardashian|kanye|ye\b|drake|taylor swift|beyonce|rihanna|musk|elon|zuckerberg|bezos|oprah|lebron|messi|ronaldo|diddy|snoop|jay-z|doja cat|bad bunny|kendrick|ice spice|selena gomez|dua lipa|ariana grande|billie eilish|harry styles|zendaya|timothee|margot robbie|ryan reynolds|scarlett|chris hemsworth|tom holland|sydney sweeney|pedro pascal|sabrina carpenter|chappell roan|jenna ortega|mike tyson|jake paul|logan paul|mr beast|joe rogan|addison rae|charli d'amelio|streamer|influencer|tiktoker|youtuber)\b/i;
+const _celebExclude=/\b(nominate|fed chair|tariff|congress|senate|executive order|state of the union|cabinet|secretary|immigration|impeach|indictment)\b/i;
+const _awardsKw=/\b(oscar|academy award|grammy|emmy|golden globe|tony award|bafta|cannes|sundance|mtv|bet award|billboard|american music|sag award|people.s choice|critics.? choice|pulitzer|nobel prize|ballon d.or|heisman|mvp|best picture|best actor|best actress|best director|best album|album of the year|song of the year|record of the year)\b/i;
+const _sbKw=/\b(super bowl|halftime|nfl|chiefs|eagles|49ers|ravens|lions|buffalo bills|quarterback|touchdown)\b/i;
+const _oscarKw=/\b(oscar|oscars|academy award|best picture|best actor|best actress|best director|best film|best supporting)\b/i;
+const _cryptoKw=/\b(bitcoin|btc|ethereum|eth\b|solana|sol\b|crypto|defi|stablecoin|altcoin)\b/i;
+const _euroKw=/\b(eurovision|song contest)\b/i;
+const _trumpKw=/\b(trump|executive order|congress|legislation|white house|tariff|republican|democrat|senate|maga)\b/i;
+const _aiKw=/\b(openai|anthropic|gpt|artificial intelligence|chatgpt|claude|gemini|ai\b|llm|deepseek|meta ai)\b/i;
+
+const POLY_CATEGORIES={
+    trending:{label:'Trending',icon:'\u{1F525}',url:`${GAMMA_BASE}/events?limit=50&closed=false&order=volume24hr&ascending=false`},
+    sports:{label:'Sports',icon:'\u{1F3C0}',url:`${GAMMA_BASE}/events?tag_id=1&limit=50&closed=false&order=volume24hr&ascending=false`},
+    politics:{label:'Politics',icon:'\u{1F3DB}\u{FE0F}',url:`${GAMMA_BASE}/events?tag_id=2&limit=50&closed=false&order=volume24hr&ascending=false`},
+    elections:{label:'Elections 2028',icon:'\u{1F5F3}\u{FE0F}',url:`${GAMMA_BASE}/events?tag_id=264&limit=50&closed=false&order=volume24hr&ascending=false`},
+    crypto:{label:'Crypto',icon:'\u{1FA99}',url:`${GAMMA_BASE}/events?tag_id=21&limit=50&closed=false&order=volume24hr&ascending=false`},
+    ai:{label:'AI & Tech',icon:'\u{1F916}',urls:[`${GAMMA_BASE}/events?tag_id=439&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=282&limit=50&closed=false&order=volume24hr&ascending=false`]},
+    entertainment:{label:'Entertainment',icon:'\u{1F3AC}',urls:[`${GAMMA_BASE}/events?tag_id=100&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=145&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=51&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=3&limit=50&closed=false&order=volume24hr&ascending=false`],filter:m=>!_sportKw.test(m._rawQuestion)},
+    culture:{label:'Culture',icon:'\u{1F30D}',urls:[`${GAMMA_BASE}/events?tag_id=53&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=452&limit=50&closed=false&order=volume24hr&ascending=false`]},
+    geopolitics:{label:'Geopolitics',icon:'\u{1F310}',urls:[`${GAMMA_BASE}/events?tag_id=180&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=270&limit=50&closed=false&order=volume24hr&ascending=false`]},
+    science:{label:'Science',icon:'\u{1F52C}',urls:[`${GAMMA_BASE}/events?tag_id=74&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=84&limit=50&closed=false&order=volume24hr&ascending=false`]},
+    economy:{label:'Economy',icon:'\u{1F4C8}',urls:[`${GAMMA_BASE}/events?tag_id=120&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=370&limit=50&closed=false&order=volume24hr&ascending=false`]},
+    newyork:{label:'New York',icon:'\u{1F5FD}',deepScan:true,filter:m=>_nyKw.test(m._searchText)},
+    eu:{label:'EU & Europe',icon:'\u{1F1EA}\u{1F1FA}',deepScan:true,urls:[`${GAMMA_BASE}/events?tag_id=180&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=270&limit=100&closed=false&order=volume24hr&ascending=false`],filter:m=>_euKw.test(m._searchText)},
+    china:{label:'China',icon:'\u{1F1E8}\u{1F1F3}',deepScan:true,filter:m=>_cnKw.test(m._searchText)},
+    tossups:{label:'Toss-Ups',icon:'\u{2696}\u{FE0F}',url:`${GAMMA_BASE}/events?limit=100&closed=false&order=volume24hr&ascending=false`,filter:m=>{const y=m._yesPrice*100;return y>=40&&y<=60;}},
+    celebrity:{label:'Celebrity',icon:'\u{1F31F}',deepScan:true,urls:[`${GAMMA_BASE}/events?tag_id=100&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=145&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=3&limit=100&closed=false&order=volume24hr&ascending=false`],filter:m=>_celebKw.test(m._searchText)&&!_celebExclude.test(m._searchText),braveImages:true},
+    awards:{label:'Awards',icon:'\u{1F3C6}',deepScan:true,urls:[`${GAMMA_BASE}/events?tag_id=100&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=145&limit=100&closed=false&order=volume24hr&ascending=false`],filter:m=>_awardsKw.test(m._searchText),braveImages:true},
+    ending:{label:'Ending Soon',icon:'\u{23F0}',url:`${GAMMA_BASE}/events?limit=100&closed=false&order=volume24hr&ascending=false`,filter:m=>{const d=m._daysLeft;return d!==null&&d>0&&d<=30;}},
+    highvol:{label:'Whale Markets',icon:'\u{1F40B}',url:`${GAMMA_BASE}/events?limit=50&closed=false&order=liquidityClob&ascending=false&liquidity_num_min=500000`}
+};
+
+// CURATED COLLECTIONS — tag-based urls + regex filter (same proven pattern as celebrity/awards/eu categories)
+const CURATED_COLLECTIONS={
+    'super-bowl-2026':{label:'Super Bowl 2026',icon:'\u{1F3C8}',desc:'Halftime, MVP, props & more',
+        urls:[`${GAMMA_BASE}/events?tag_id=1&limit=50&closed=false&order=volume24hr&ascending=false`],deepScan:true,filter:_sbKw},
+    'oscars-2026':{label:'Oscars 2026',icon:'\u{1F3C6}',desc:'Best Picture, Actor, Director',
+        urls:[`${GAMMA_BASE}/events?tag_id=100&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=145&limit=50&closed=false&order=volume24hr&ascending=false`],deepScan:true,filter:_oscarKw,braveImages:true},
+    'crypto-majors':{label:'Crypto Majors',icon:'\u20BF',desc:'BTC, ETH, SOL price targets',
+        urls:[`${GAMMA_BASE}/events?tag_id=21&limit=50&closed=false&order=volume24hr&ascending=false`],filter:_cryptoKw},
+    'eurovision-2026':{label:'Eurovision 2026',icon:'\u{1F3A4}',desc:'Who wins, boycotts, qualifiers',
+        urls:[`${GAMMA_BASE}/events?tag_id=100&limit=100&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=145&limit=50&closed=false&order=volume24hr&ascending=false`],deepScan:true,filter:_euroKw},
+    'us-politics':{label:'Trump & Congress',icon:'\u{1F1FA}\u{1F1F8}',desc:'Executive orders, legislation, approval',
+        urls:[`${GAMMA_BASE}/events?tag_id=2&limit=50&closed=false&order=volume24hr&ascending=false`],filter:_trumpKw},
+    'ai-race':{label:'AI Race',icon:'\u{1F9E0}',desc:'GPT-5, regulation, benchmarks',
+        urls:[`${GAMMA_BASE}/events?tag_id=439&limit=50&closed=false&order=volume24hr&ascending=false`,`${GAMMA_BASE}/events?tag_id=282&limit=50&closed=false&order=volume24hr&ascending=false`],filter:_aiKw}
+};
+
+async function loadCollection(key){
+    const col=CURATED_COLLECTIONS[key];if(!col)return;
+    showLoading(true);
+    try{
+        let all=[];const seen=new Set();
+        const scanUrls=[...(col.urls||[])];
+        if(col.deepScan){for(let off=0;off<500;off+=100)scanUrls.push(`${GAMMA_BASE}/events?limit=100&offset=${off}&closed=false&order=volume24hr&ascending=false`);}
+        const res=await Promise.allSettled(scanUrls.map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})));
+        for(const r of res){if(r.status!=='fulfilled')continue;const raw=r.value;const ev=Array.isArray(raw)?raw:raw.data||raw.events||[];for(const e of ev){if(!seen.has(e.id)){seen.add(e.id);all.push(e);}}}
+        let data=transformPolymarketData(all).filter(m=>{const y=m._yesPrice*100;return y>3&&y<97&&!isNaN(y);});
+        if(col.filter)data=data.filter(m=>col.filter.test(m._searchText));
+        data.sort((a,b)=>(b._rawVolume||0)-(a._rawVolume||0));
+        if(!data.length)throw new Error('No markets for "'+col.label+'"');
+        markets=data;filteredMarkets=[...markets];currentIndex=0;currentCategory='search';useBraveImages=!!col.braveImages;
+        showLoading(false);navigate('swipe');initBackground('search');
+        showToast(col.icon+' '+data.length+' markets loaded','success');
+        renderSwipeCard();prefetchNews(0);prefetchImages(0);renderSubFilters();
+    }catch(err){showLoading(false);showToast('Failed: '+err.message,'error');}
+}
+
+// CANVAS BACKGROUND
+function initBackground(catKey){
+    if(bgAnimId){cancelAnimationFrame(bgAnimId);bgAnimId=null;}
+    const canvas=document.getElementById('bgCanvas');if(!canvas)return;
+    const ctx=canvas.getContext('2d');let particles=[],blobs=[];let w,h;
+    const colors=CAT_COLORS[catKey]||CAT_COLORS.trending;
+    function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight;}
+    resize();window.addEventListener('resize',resize);
+    for(let i=0;i<70;i++){const layer=Math.random();const col=colors[Math.floor(Math.random()*colors.length)];particles.push({x:Math.random()*w,y:Math.random()*h,z:layer,size:1.5+layer*3.5,vx:(Math.random()-0.5)*0.25*(0.3+layer*0.7),vy:(Math.random()-0.5)*0.18*(0.3+layer*0.7),r:col.r,g:col.g,b:col.b,pulse:Math.random()*Math.PI*2,pulseSpeed:0.005+Math.random()*0.01});}
+    for(let i=0;i<5;i++){const col=colors[i%colors.length];blobs.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.12,vy:(Math.random()-0.5)*0.1,radius:200+Math.random()*200,r:col.r,g:col.g,b:col.b});}
+    function draw(){ctx.clearRect(0,0,w,h);
+        for(const b of blobs){b.x+=b.vx;b.y+=b.vy;if(b.x<-b.radius)b.x=w+b.radius;if(b.x>w+b.radius)b.x=-b.radius;if(b.y<-b.radius)b.y=h+b.radius;if(b.y>h+b.radius)b.y=-b.radius;const g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.radius);g.addColorStop(0,`rgba(${b.r},${b.g},${b.b},0.16)`);g.addColorStop(1,`rgba(${b.r},${b.g},${b.b},0)`);ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
+        ctx.lineWidth=0.5;for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){const a=particles[i],b=particles[j];const dx=a.x-b.x,dy=a.y-b.y;const dist=Math.sqrt(dx*dx+dy*dy);if(dist<140){const alpha=(1-dist/140)*0.18*(a.z+b.z)/2;ctx.strokeStyle=`rgba(${a.r},${a.g},${a.b},${alpha})`;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}}
+        for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.pulse+=p.pulseSpeed;if(p.x<-10)p.x=w+10;if(p.x>w+10)p.x=-10;if(p.y<-10)p.y=h+10;if(p.y>h+10)p.y=-10;const glow=0.4+Math.sin(p.pulse)*0.2;const alpha=glow*(0.35+p.z*0.45);const size=p.size*(0.9+Math.sin(p.pulse)*0.1);ctx.globalAlpha=alpha*0.5;ctx.shadowColor=`rgb(${p.r},${p.g},${p.b})`;ctx.shadowBlur=size*3;ctx.fillStyle=`rgb(${p.r},${p.g},${p.b})`;ctx.beginPath();ctx.arc(p.x,p.y,size,0,Math.PI*2);ctx.fill();ctx.globalAlpha=alpha;ctx.shadowBlur=0;ctx.beginPath();ctx.arc(p.x,p.y,size*0.6,0,Math.PI*2);ctx.fill();}
+        ctx.globalAlpha=1;ctx.shadowBlur=0;bgAnimId=requestAnimationFrame(draw);}
+    draw();
+}
+
+// TRANSFORM
+function transformPolymarketData(data){
+    const raw=Array.isArray(data)?data:data.data?.markets||data.data||data.markets||data;
+    if(!Array.isArray(raw))return[];const flat=[];
+    for(const item of raw){if(item.markets&&Array.isArray(item.markets)){for(const mk of item.markets)flat.push({...mk,_eventTitle:item.title,_eventImage:item.image,_eventSlug:item.slug,_eventDesc:item.description||'',_commentCount:item.commentCount||0});}else flat.push(item);}
+    return flat.map(m=>{
+        let yp=m.yes_price||0,np=m.no_price||0;if(m.outcomePrices){try{const p=JSON.parse(m.outcomePrices);yp=parseFloat(p[0])||0;np=parseFloat(p[1])||0;}catch(e){}}
+        const yo=yp?(yp*100).toFixed(0):'?',no=np?(np*100).toFixed(0):'?';
+        const rv=parseFloat(m.volume)||parseFloat(m.volumeNum)||0,rl=parseFloat(m.liquidity)||parseFloat(m.liquidityNum)||0;
+        const vol=rv>=1e6?'$'+(rv/1e6).toFixed(1)+'M':rv>=1000?'$'+(rv/1000).toFixed(0)+'K':rv>0?'$'+rv.toFixed(0):'N/A';
+        const liq=rl>=1e6?'$'+(rl/1e6).toFixed(1)+'M':rl>=1000?'$'+(rl/1000).toFixed(0)+'K':rl>0?'$'+rl.toFixed(0):null;
+        const er=m.endDate||m.end_date||null;const ed=er?new Date(er).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+        const dl=er?Math.ceil((new Date(er)-new Date())/864e5):null;
+        const cat=(m.category||m.groupItemTitle||'Prediction').charAt(0).toUpperCase()+(m.category||m.groupItemTitle||'Prediction').slice(1);
+        const slug=m.slug||m._eventSlug||'';const yn=parseInt(yo);
+        const v24=m.volume24hr?parseFloat(m.volume24hr):null;const pch=m.oneDayPriceChange?parseFloat(m.oneDayPriceChange):null;
+        const rawQ=m.question||m._eventTitle||m.title||'',evTitle=m._eventTitle||m.title||'';
+        return{_isPolymarket:true,_rawQuestion:rawQ,_searchText:evTitle+' '+rawQ,_slug:slug,_eventSlug:m._eventSlug||'',_eventTitle:m._eventTitle||'',_yesPrice:yp,_noPrice:np,_rawVolume:rv,_rawLiquidity:rl,_endDate:er,_daysLeft:dl,_image:m.image||m._eventImage||null,_desc:m.description||m._eventDesc||'',_commentCount:m._commentCount||m.commentCount||0,_vol24h:v24,_priceChange:pch,_spread:m.spread?parseFloat(m.spread):null,yesOdds:yo,noOdds:no,volume:vol,liquidity:liq,endDate:ed,category:cat,url:slug?'https://polymarket.com/event/'+slug:''};
+    });
+}
+function genResolutionBrief(m){
+    const parts=[];
+    const ed=m._endDate?new Date(m._endDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+    if(ed)parts.push('<b>resolves</b> '+ed+(m._daysLeft!==null&&m._daysLeft>0?' ('+m._daysLeft+'d)':''));
+    const ql=(m._rawQuestion||'').toLowerCase();
+    if(ql.includes('president')||ql.includes('election'))parts.push('<b>via</b> official election results');
+    else if(ql.includes('price')||ql.includes('bitcoin')||ql.includes('btc')||ql.includes('eth'))parts.push('<b>via</b> spot price at close');
+    else if(ql.includes('fed')||ql.includes('rate'))parts.push('<b>via</b> fomc statement');
+    if(m._desc){const d=m._desc.slice(0,150).toLowerCase();parts.push(d+(m._desc.length>150?'...':''));}
+    return parts.length?parts.join(' · '):'';
+}
+function genSignalLine(m){
+    const parts=[];
+    if(m._priceChange!==null&&Math.abs(m._priceChange)>0.005){
+        const dir=m._priceChange>0?'+':'-';
+        parts.push(dir+(Math.abs(m._priceChange*100).toFixed(1))+'% today');
+    }
+    if(m._daysLeft!==null&&m._daysLeft<=7&&m._daysLeft>0)parts.push(m._daysLeft+'d left');
+    if(m._rawLiquidity>0&&m._rawLiquidity<20000)parts.push('thin liquidity');
+    if(m._commentCount>10)parts.push(m._commentCount+' comments');
+    if(m._spread!==null&&m._spread<0.03)parts.push('tight spread');
+    if(m._rawVolume>5e6)parts.push('whale volume');
+    return parts.length?parts.join(' · '):'';
+}
+function genSimilarMarkets(m){
+    if(!markets.length)return{siblings:[],related:[]};
+    // Event siblings: same _eventSlug (exact event grouping)
+    const siblings=m._eventSlug?markets.filter(o=>o._slug!==m._slug&&o._eventSlug===m._eventSlug).slice(0,6):[];
+    // Word-overlap fallback (only if < 3 siblings)
+    let related=[];
+    if(siblings.length<3){
+        const words=new Set(m._rawQuestion.toLowerCase().replace(/[^a-z0-9 ]/g,'').split(' ').filter(w=>w.length>3));
+        const sibSlugs=new Set(siblings.map(s=>s._slug));
+        related=markets.filter(o=>o._slug!==m._slug&&!sibSlugs.has(o._slug)).map(o=>{
+            const oWords=o._rawQuestion.toLowerCase().replace(/[^a-z0-9 ]/g,'').split(' ').filter(w=>w.length>3);
+            const overlap=oWords.filter(w=>words.has(w)).length;
+            return{m:o,score:overlap};
+        }).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score).slice(0,3).map(x=>x.m);
+    }
+    return{siblings,related};
+}
+function genWhatSection(m){
+    const y=parseInt(m.yesOdds),parts=[];
+    const verdict=y>=60?'Lean YES':y<=40?'Lean NO':'Toss-up';
+    parts.push(`The market prices this at ${m.yesOdds}% YES / ${m.noOdds}% NO. Verdict: ${verdict}.`);
+    if(m._rawVolume>=1e6)parts.push(`Backed by ${m.volume} in volume \u2014 serious money.`);
+    else if(m._rawVolume>=100000)parts.push(`${m.volume} in volume.`);
+    if(m._priceChange!==null){const dir=m._priceChange>0?'up':'down';parts.push(`Price moved ${dir} ${Math.abs(m._priceChange*100).toFixed(1)}% today.`);}
+    return parts.join(' ');
+}
+function genWhySection(m){
+    const parts=[];
+    if(m._daysLeft!==null&&m._daysLeft<=7)parts.push(`${m._rawQuestion.split(' ').slice(0,4).join(' ')} market \u2014 ENDING SOON (${m._daysLeft} days)!`);
+    if(m._rawLiquidity>=500000)parts.push(`Liquidity: ${m.liquidity}.`);
+    if(m._commentCount>10)parts.push(`${m._commentCount} comments \u2014 active discussion.`);
+    if(m._spread!==null&&m._spread<0.03)parts.push('Tight spread \u2014 efficient market.');
+    return parts.length?parts.join(' '):'Active market worth watching.';
+}
+
+// DATA LOADING
+async function loadCategory(key){
+    const cat=POLY_CATEGORIES[key];if(!cat)return;
+    currentCategory=key;activeSubFilter=null;showLoading(true);
+    try{
+        let all=[];const seen=new Set();
+        // Deep scan: fetch 500 events across 5 pages for keyword-filtered categories
+        if(cat.deepScan){
+            const extraUrls=cat.urls||[];
+            const scanUrls=[...extraUrls];
+            for(let off=0;off<500;off+=100)scanUrls.push(`${GAMMA_BASE}/events?limit=100&offset=${off}&closed=false&order=volume24hr&ascending=false`);
+            const res=await Promise.allSettled(scanUrls.map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})));
+            for(const r of res){if(r.status!=='fulfilled')continue;const raw=r.value;const ev=Array.isArray(raw)?raw:raw.data||raw.events||[];for(const e of ev){if(!seen.has(e.id)){seen.add(e.id);all.push(e);}}}
+        }else{
+            const urls=cat.urls||[cat.url];
+            const res=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})));
+            for(const r of res){if(r.status!=='fulfilled')continue;const raw=r.value;const ev=Array.isArray(raw)?raw:raw.data||raw.events||[];for(const e of ev){if(!seen.has(e.id)){seen.add(e.id);all.push(e);}}}
+        }
+        if(!all.length)throw new Error('No markets found');
+        let data=transformPolymarketData(all).filter(m=>{const y=m._yesPrice*100;return y>3&&y<97&&!isNaN(y);});
+        data.sort((a,b)=>(b._rawLiquidity||0)-(a._rawLiquidity||0));
+        if(cat.filter)data=data.filter(cat.filter);
+        if(!data.length)throw new Error('No markets match filter');
+        markets=data;filteredMarkets=[...markets];currentIndex=0;useBraveImages=!!cat.braveImages;
+        showLoading(false);navigate('swipe');initBackground(key);
+        showToast(cat.icon+' '+data.length+' markets loaded','success');
+        renderSwipeCard();prefetchNews(0);prefetchImages(0);renderSubFilters();
+    }catch(err){showLoading(false);showToast('Failed: '+err.message,'error');}
+}
+async function searchMarkets(){
+    const q=document.getElementById('searchInput').value.trim();if(!q)return;showLoading(true);
+    try{
+        const res=await fetch(`${GAMMA_BASE}/events?title=${encodeURIComponent(q)}&limit=50&closed=false&order=volume24hr&ascending=false`);
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        let data=transformPolymarketData(await res.json());
+        data=data.filter(m=>{const y=m._yesPrice*100;return y>3&&y<97;});
+        if(!data.length)throw new Error('No markets for "'+q+'"');
+        markets=data;filteredMarkets=[...markets];currentIndex=0;currentCategory='search';
+        showLoading(false);navigate('swipe');initBackground('search');
+        showToast(data.length+' results','success');renderSwipeCard();
+    }catch(err){showLoading(false);showToast(err.message,'error');}
+}
+
+// SUB-FILTERS (for whale markets)
+function renderSubFilters(){
+    const el=document.getElementById('swipeSubfilters');
+    if(currentCategory!=='highvol'){el.innerHTML='';return;}
+    el.innerHTML=['All','$500K+','$1M+','$5M+','$10M+'].map((l,i)=>{
+        const thresholds=[0,500000,1000000,5000000,10000000];
+        return`<button class="subfilter-btn${activeSubFilter===i?' active':''}" onclick="applySubFilter(${i},${thresholds[i]})">${l}</button>`;
+    }).join('');
+}
+function applySubFilter(idx,threshold){
+    activeSubFilter=idx;
+    filteredMarkets=threshold>0?markets.filter(m=>m._rawLiquidity>=threshold):[...markets];
+    currentIndex=0;renderSwipeCard();renderSubFilters();
+    showToast(filteredMarkets.length+' markets','info');
+}
+
+// NAVIGATION
+function navigate(view){
+    currentView=view;
+    document.getElementById('viewLanding').style.display=view==='landing'?'block':'none';
+    document.getElementById('viewSwipe').className='swipe-view'+(view==='swipe'?' active':'');
+    document.getElementById('viewGrid').className='grid-view'+(view==='grid'?' active':'');
+    document.getElementById('viewWatchlist').className='watchlist-view'+(view==='watchlist'?' active':'');
+    document.getElementById('viewHistory').className='history-view'+(view==='history'?' active':'');
+    document.getElementById('viewAbout').className='about-view'+(view==='about'?' active':'');
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    if(view==='swipe')document.getElementById('navSwipe').classList.add('active');
+    if(view==='grid')document.getElementById('navGrid').classList.add('active');
+    if(view==='watchlist')document.getElementById('navWatch').classList.add('active');
+    if(view==='history')document.getElementById('navHistory').classList.add('active');
+    if(view==='about')document.getElementById('navAbout').classList.add('active');
+    if(view==='grid'&&markets.length)renderGrid();
+    if(view==='watchlist')renderWatchlist();
+    if(view==='history')renderHistory();
+    if(view==='swipe'&&markets.length){renderSwipeCard();const cat=POLY_CATEGORIES[currentCategory];document.getElementById('swipeCatLabel').textContent=cat?cat.icon+' '+cat.label:(currentCategory==='search'?'Search Results':'');renderSubFilters();}
+    if(view==='landing'){history.replaceState(null,'','/poly');if(!bgAnimId)initBackground('trending');}
+    else history.replaceState(null,'','/poly#'+view);
+}
+
+// SWIPE CARD
+function renderSwipeCard(){
+    const container=document.getElementById('cardContainer');
+    if(currentIndex>=filteredMarkets.length){const sh=swipeHistory,sk=sh.filter(h=>h.dir==='left').length,ri=sh.filter(h=>h.dir==='right').length,wt=sh.filter(h=>h.dir==='down').length;container.innerHTML='<div class="swipe-empty"><h3>All caught up</h3><p>'+filteredMarkets.length+' markets reviewed</p>'+(sh.length?'<p style="font-size:0.8rem;color:var(--text-3);margin-top:8px;"><span style="color:var(--no);">'+sk+' skipped</span> · <span style="color:var(--yes);">'+ri+' interested</span> · <span style="color:var(--accent);">'+wt+' watching</span></p>':'')+'<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;"><button class="action-btn like" style="width:auto;padding:10px 24px;border-radius:10px;font-size:0.85rem;" onclick="currentIndex=0;renderSwipeCard()">Start Over</button><button class="action-btn watch" style="width:auto;padding:10px 24px;border-radius:10px;font-size:0.85rem;" onclick="navigate(\'history\')">View History</button></div></div>';document.getElementById('swipeCounter').textContent='';return;}
+    const m=filteredMarkets[currentIndex],isW=watchlist.some(w=>w.slug===m._slug),news=renderCardNews(m._slug);
+    const cardImg=getCardImage(m);
+    const imgHtml=cardImg?`<img class="card-image" src="${escA(cardImg)}" alt="" onerror="this.style.display='none'">`:'';
+    const resBrief=genResolutionBrief(m);
+    const sigLine=genSignalLine(m);
+    const{siblings,related}=genSimilarMarkets(m);
+    container.innerHTML=`
+        <div class="swipe-hint left" id="hintLeft">SKIP</div>
+        <div class="swipe-hint right" id="hintRight">SAVE</div>
+        <div class="swipe-card entering" id="activeCard">
+            ${imgHtml}
+            <div class="card-head">
+                <div class="card-head-left">
+                    <div class="card-cat-pill">${esc(m.category)}</div>
+                    <div class="card-question">${esc(m._rawQuestion)}</div>
+                </div>
+                <div class="card-highlight"><div class="card-highlight-value">${m.yesOdds}%</div><div class="card-highlight-label">YES</div></div>
+            </div>
+            <div class="card-body">
+                <div class="card-fields">
+                    ${m.endDate?'<div class="card-field"><div class="field-label">ends</div><div class="field-value'+(m._daysLeft!==null&&m._daysLeft<=7?' urgent':'')+'">'+esc(m._daysLeft!==null&&m._daysLeft>0?m._daysLeft+'d':m._daysLeft===0?'today':m.endDate)+'</div></div>':''}
+                    <div class="card-field"><div class="field-label">volume</div><div class="field-value">${m.volume}</div></div>
+                    ${m.liquidity?'<div class="card-field"><div class="field-label">liquidity</div><div class="field-value">'+m.liquidity+'</div></div>':''}
+                    ${m._priceChange!==null?'<div class="card-field"><div class="field-label">24h</div><div class="field-value" style="color:'+(m._priceChange>=0?'var(--yes)':'var(--no)')+';">'+(m._priceChange>=0?'+':'')+((m._priceChange*100).toFixed(1))+'%</div></div>':''}
+                </div>
+                ${sigLine?'<div style="font-size:0.75rem;color:var(--text-3);margin-bottom:10px;">'+esc(sigLine)+'</div>':''}
+                ${resBrief?'<div class="card-section"><div class="card-section-header">RESOLUTION</div><div class="card-section-content" style="background:var(--bg-3);border-left:2px solid var(--text-3);border-radius:0 8px 8px 0;font-size:0.78rem;">'+resBrief+'</div></div>':''}
+                ${news?'<div class="card-section"><div class="card-section-header">NEWS</div><div class="card-news" id="newsSlot_'+currentIndex+'">'+news+'</div></div>':'<div class="card-news" id="newsSlot_'+currentIndex+'"><div class="card-news-loading">loading news...</div></div>'}
+                ${siblings.length?'<div class="card-section"><div class="card-section-header">IN THIS EVENT</div><div style="display:flex;flex-direction:column;gap:4px;">'+siblings.map(s=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-3);border-radius:8px;cursor:pointer;font-size:0.78rem;" onclick="event.stopPropagation();jumpToMarket(\''+escA(s._slug)+'\')"><span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(s._rawQuestion)+'</span><span style="color:var(--yes);font-weight:600;margin-left:8px;flex-shrink:0;">'+s.yesOdds+'%</span></div>').join('')+'</div></div>':''}
+                ${related.length?'<div class="card-section"><div class="card-section-header">RELATED</div><div style="display:flex;flex-direction:column;gap:4px;">'+related.map(s=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-3);border-radius:8px;cursor:pointer;font-size:0.78rem;" onclick="event.stopPropagation();jumpToMarket(\''+escA(s._slug)+'\')"><span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(s._rawQuestion)+'</span><span style="color:var(--yes);font-weight:600;margin-left:8px;flex-shrink:0;">'+s.yesOdds+'%</span></div>').join('')+'</div></div>':''}
+                <button class="card-analyze-btn" onclick="event.stopPropagation();openAnalysis(${currentIndex})">deep analysis</button>
+            </div>
+            <div class="card-footer"><span class="card-footer-link" onclick="event.stopPropagation()">tap to expand</span><span class="card-footer-count">${currentIndex+1} / ${filteredMarkets.length}</span></div>
+        </div>`;
+    document.getElementById('swipeCounter').textContent=(currentIndex+1)+' / '+filteredMarkets.length;
+    setupSwipeGestures(); // only attaches once thanks to _swipeListenersAttached flag
+    updateUndoBtn();
+}
+
+// FULLCARD MODAL
+function openFullCard(){
+    const m=filteredMarkets[currentIndex];if(!m)return;
+    const overlay=document.getElementById('fullcardOverlay'),content=document.getElementById('fullcardContent');
+    const isW=watchlist.some(w=>w.slug===m._slug),news=renderCardNews(m._slug);
+    const yn=parseInt(m.yesOdds),nn=parseInt(m.noOdds);
+    const fcImg=getCardImage(m);
+    content.innerHTML=`
+        ${fcImg?'<img class="fullcard-image" src="'+escA(fcImg)+'" alt="" onerror="this.style.display=\'none\'">':''}
+        <div class="fullcard-body">
+            <div class="card-cat-pill" style="margin-bottom:10px;">${esc(m.category)}</div>
+            <h2 style="font-size:1.3rem;font-weight:700;line-height:1.3;margin-bottom:8px;">${esc(m._rawQuestion)}</h2>
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px;"><span style="color:var(--yes);font-weight:600;">YES ${m.yesOdds}%</span><span style="color:var(--no);font-weight:600;">NO ${m.noOdds}%</span></div>
+            <div class="fullcard-odds-bar"><div class="fullcard-odds-yes" style="width:${yn}%;"></div><div class="fullcard-odds-no" style="width:${nn}%;"></div></div>
+            <button class="card-analyze-btn" onclick="openAnalysis(${currentIndex})">Deep Analysis</button>
+            <div class="card-fields" style="margin-bottom:16px;">
+                ${m.endDate?'<div class="card-field"><div class="field-label">Ends</div><div class="field-value'+(m._daysLeft!==null&&m._daysLeft<=7?' urgent':'')+'">'+esc(m.endDate)+(m._daysLeft!==null?' ('+m._daysLeft+'d)':'')+'</div></div>':''}
+                <div class="card-field"><div class="field-label">Volume</div><div class="field-value">${m.volume}</div></div>
+                ${m.liquidity?'<div class="card-field"><div class="field-label">Liquidity</div><div class="field-value">'+m.liquidity+'</div></div>':''}
+                ${m._priceChange!==null?'<div class="card-field"><div class="field-label">24h Change</div><div class="field-value" style="color:'+(m._priceChange>=0?'var(--yes)':'var(--no)')+';">'+(m._priceChange>=0?'+':'')+((m._priceChange*100).toFixed(1))+'%</div></div>':''}
+                ${m._vol24h?'<div class="card-field"><div class="field-label">24h Volume</div><div class="field-value">'+(m._vol24h>=1e6?'$'+(m._vol24h/1e6).toFixed(1)+'M':m._vol24h>=1000?'$'+(m._vol24h/1000).toFixed(0)+'K':'$'+m._vol24h.toFixed(0))+'</div></div>':''}
+                ${m._spread!==null?'<div class="card-field"><div class="field-label">Spread</div><div class="field-value">'+(m._spread*100).toFixed(1)+'%</div></div>':''}
+                ${m._commentCount>0?'<div class="card-field"><div class="field-label">Comments</div><div class="field-value">'+m._commentCount+'</div></div>':''}
+            </div>
+            <div class="card-section"><div class="card-section-header">RESOLUTION</div><div class="resolution-content">${genResolutionBrief(m)||'see polymarket event page'}</div></div>
+            ${m._desc?'<div style="font-size:0.8rem;color:var(--text-2);line-height:1.5;margin-bottom:12px;padding:10px;background:var(--bg-3);border-radius:8px;">'+esc(m._desc.slice(0,400))+(m._desc.length>400?'...':'')+'</div>':''}
+            ${(()=>{const{siblings:fs,related:fr}=genSimilarMarkets(m);let h='';if(fs.length)h+='<div class="card-section"><div class="card-section-header">IN THIS EVENT</div><div style="display:flex;flex-direction:column;gap:4px;">'+fs.map(s=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-3);border-radius:8px;cursor:pointer;font-size:0.78rem;" onclick="event.stopPropagation();jumpToMarket(\''+escA(s._slug)+'\');closeFullCard()"><span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(s._rawQuestion)+'</span><span style="color:var(--yes);font-weight:600;margin-left:8px;flex-shrink:0;">'+s.yesOdds+'%</span></div>').join('')+'</div></div>';if(fr.length)h+='<div class="card-section"><div class="card-section-header">RELATED</div><div style="display:flex;flex-direction:column;gap:4px;">'+fr.map(s=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg-3);border-radius:8px;cursor:pointer;font-size:0.78rem;" onclick="event.stopPropagation();jumpToMarket(\''+escA(s._slug)+'\');closeFullCard()"><span style="flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(s._rawQuestion)+'</span><span style="color:var(--yes);font-weight:600;margin-left:8px;flex-shrink:0;">'+s.yesOdds+'%</span></div>').join('')+'</div></div>';return h;})()}
+            ${news?'<div class="card-section"><div class="card-section-header">NEWS</div><div class="card-news">'+news+'</div></div>':''}
+            <div id="fullcardDepth_${currentIndex}" style="margin-bottom:12px;"></div>
+            <div id="fullcardHolders_${currentIndex}" style="margin-bottom:12px;"></div>
+            ${m.url?'<a href="'+escA(m.url)+'" target="_blank" class="fullcard-link" onclick="event.stopPropagation()">open on polymarket</a>':''}
+        </div>
+        <div class="fullcard-actions">
+            <button class="action-btn pass" onclick="closeFullCard();doSwipe('left')" title="Skip">&#10005;</button>
+            <button class="action-btn watch" onclick="toggleWatch(${currentIndex});closeFullCard()" title="Watchlist">&#9733;</button>
+            <button class="action-btn like" onclick="closeFullCard();doSwipe('right')" title="Interested">&#10003;</button>
+        </div>`;
+    overlay.classList.add('show');
+    fetchDepthForFullcard(m,'fullcardDepth_'+currentIndex);
+    fetchHoldersForFullcard(m,'fullcardHolders_'+currentIndex);
+}
+function closeFullCard(){document.getElementById('fullcardOverlay').classList.remove('show');}
+function jumpToMarket(slug){const idx=filteredMarkets.findIndex(m=>m._slug===slug);if(idx>=0){currentIndex=idx;renderSwipeCard();}}
+async function fetchDepthForFullcard(m,elId){
+    if(!m._slug)return;
+    try{
+        // need token_id — extract from slug via gamma API
+        const gr=await fetch(`${GAMMA_BASE}/markets?slug=${m._slug}&limit=1`);
+        if(!gr.ok)return;const gd=await gr.json();const mk=gd[0];if(!mk)return;
+        const tids=mk.clobTokenIds?JSON.parse(mk.clobTokenIds):[];if(!tids[0])return;
+        const r=await fetch('/api/polymarket-depth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokenId:tids[0]})});
+        if(!r.ok)return;const d=await r.json();
+        const el=document.getElementById(elId);if(!el)return;
+        el.innerHTML='<div class="card-section"><div class="card-section-header">ORDER BOOK DEPTH</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><div class="card-field"><div class="field-label">spread</div><div class="field-value">'+(d.spread||'?')+'%</div></div><div class="card-field"><div class="field-label">midpoint</div><div class="field-value">'+(d.midpoint||'?')+'%</div></div><div class="card-field"><div class="field-label">$to move -5%</div><div class="field-value">$'+(d.costToMove5PctDown||0).toLocaleString()+'</div></div><div class="card-field"><div class="field-label">$to move +5%</div><div class="field-value">$'+(d.costToMove5PctUp||0).toLocaleString()+'</div></div><div class="card-field"><div class="field-label">bid liquidity</div><div class="field-value">$'+(d.totalBidLiquidity||0).toLocaleString()+'</div></div><div class="card-field"><div class="field-label">ask liquidity</div><div class="field-value">$'+(d.totalAskLiquidity||0).toLocaleString()+'</div></div></div></div>';
+    }catch(e){}
+}
+
+// MARKET HOLDERS (YES/NO positions)
+async function fetchHoldersForFullcard(m,elId){
+    if(!m._slug)return;
+    try{
+        const gr=await fetch(`${GAMMA_BASE}/markets?slug=${m._slug}&limit=1`);
+        if(!gr.ok)return fallbackToLeaderboard(elId);
+        const gd=await gr.json();const mk=gd[0];if(!mk)return fallbackToLeaderboard(elId);
+        const cid=mk.conditionId;if(!cid)return fallbackToLeaderboard(elId);
+        const [yesR,noR]=await Promise.all([
+            fetch('/api/polymarket-holders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conditionId:cid,outcomeIndex:0,limit:5})}),
+            fetch('/api/polymarket-holders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conditionId:cid,outcomeIndex:1,limit:5})})
+        ]);
+        const yesData=yesR.ok?await yesR.json():[];
+        const noData=noR.ok?await noR.json():[];
+        if((!Array.isArray(yesData)||!yesData.length)&&(!Array.isArray(noData)||!noData.length))return fallbackToLeaderboard(elId);
+        const el=document.getElementById(elId);if(!el)return;
+        el.innerHTML=buildHoldersSection(yesData,noData);
+    }catch(e){fallbackToLeaderboard(elId);}
+}
+function fallbackToLeaderboard(elId){fetchLeaderboardForFullcard(elId);}
+function buildHoldersSection(yesData,noData){
+    const yesArr=Array.isArray(yesData)?yesData:[];
+    const noArr=Array.isArray(noData)?noData:[];
+    if(!yesArr.length&&!noArr.length)return'';
+    function renderCol(data,label,color){
+        if(!data.length)return'<div style="flex:1;min-width:0;"><div style="font-size:0.7rem;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">'+label+'</div><div style="font-size:0.75rem;color:var(--text-3);">No data</div></div>';
+        const rows=data.slice(0,5).map((h,i)=>{
+            const addr=h.userName||h.username||h.name||truncAddr(h.proxyWallet||h.userAddress||h.address||h.wallet||'');
+            const val=parseFloat(h.value||h.amount||h.position||h.size||0);
+            const valStr=val>=1e6?'$'+(val/1e6).toFixed(1)+'M':val>=1e3?'$'+(val/1e3).toFixed(0)+'K':val>0?'$'+val.toFixed(0):'';
+            const wallet=h.proxyWallet||h.userAddress||h.address||h.wallet||'';
+            const link=wallet?'https://polymarket.com/profile/'+wallet:'#';
+            return'<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:0.75rem;"><span style="color:var(--text-3);width:16px;flex-shrink:0;">'+(i+1)+'.</span><a href="'+escA(link)+'" target="_blank" rel="noopener" style="color:var(--text-2);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:\'JetBrains Mono\',monospace;font-size:0.7rem;" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'var(--text-2)\'"'+' onclick="event.stopPropagation()">'+esc(addr)+'</a>'+(valStr?'<span style="color:'+color+';font-weight:600;margin-left:6px;flex-shrink:0;font-size:0.72rem;">'+valStr+'</span>':'')+'</div>';
+        }).join('');
+        return'<div style="flex:1;min-width:0;"><div style="font-size:0.7rem;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">'+label+'</div>'+rows+'</div>';
+    }
+    return'<div class="card-section"><div class="card-section-header">MARKET POSITIONS</div><div style="display:flex;gap:16px;">'+renderCol(yesArr,'YES Holders','var(--yes)')+renderCol(noArr,'NO Holders','var(--no)')+'</div></div>';
+}
+
+// LEADERBOARD
+let _lbCache={};const LB_CACHE_TTL=5*60*1000;
+function formatPNL(v){const a=Math.abs(v);if(a>=1e6)return'$'+(a/1e6).toFixed(1)+'M';if(a>=1e3)return'$'+(a/1e3).toFixed(0)+'K';return'$'+a.toFixed(0);}
+function truncAddr(s){if(!s)return'???';if(s.length>16)return s.slice(0,6)+'...'+s.slice(-4);return s;}
+function renderLbRows(data,limit){
+    return data.slice(0,limit).map((t,i)=>{
+        const name=t.userName||t.username||t.name||truncAddr(t.proxyWallet||t.userAddress||t.address||'');
+        const wallet=t.proxyWallet||t.userAddress||t.address||'';
+        const pnl=parseFloat(t.pnl||t.PNL||0);const cls=pnl>=0?'pos':'neg';const sign=pnl>=0?'+':'';
+        const nameHtml=wallet?'<a href="https://polymarket.com/profile/'+escA(wallet)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(name)+'</a>':esc(name);
+        return'<tr><td class="lb-rank">'+(i+1)+'</td><td class="lb-name">'+nameHtml+'</td><td class="lb-pnl '+cls+'">'+sign+formatPNL(pnl)+'</td></tr>';
+    }).join('');
+}
+async function fetchLeaderboardForFullcard(elId){
+    try{
+        const ckey='fc_WEEK';const now=Date.now();
+        if(_lbCache[ckey]&&now-_lbCache[ckey].ts<LB_CACHE_TTL){
+            const el=document.getElementById(elId);if(el)el.innerHTML=buildLbSection(_lbCache[ckey].data,5,'TOP TRADERS THIS WEEK');return;
+        }
+        const r=await fetch('/api/polymarket-leaderboard?timePeriod=WEEK&limit=5');
+        if(!r.ok)return;const data=await r.json();
+        _lbCache[ckey]={data,ts:now};
+        const el=document.getElementById(elId);if(!el)return;
+        el.innerHTML=buildLbSection(data,5,'TOP TRADERS THIS WEEK');
+    }catch(e){}
+}
+function buildLbSection(data,limit,title){
+    if(!data||!data.length)return'';
+    return'<div class="card-section"><div class="card-section-header">'+esc(title)+'</div><table class="lb-table"><thead><tr><th>#</th><th>Trader</th><th style="text-align:right;">PNL</th></tr></thead><tbody>'+renderLbRows(data,limit)+'</tbody></table></div>';
+}
+let _landingLbPeriod='WEEK';
+async function loadLandingLeaderboard(period){
+    _landingLbPeriod=period||_landingLbPeriod;
+    const el=document.getElementById('landingLeaderboard');if(!el)return;
+    const ckey='landing_'+_landingLbPeriod;const now=Date.now();
+    if(_lbCache[ckey]&&now-_lbCache[ckey].ts<LB_CACHE_TTL){
+        el.innerHTML=buildLandingLb(_lbCache[ckey].data);return;
+    }
+    el.innerHTML='<h3>Top Traders</h3><div class="lb-loading">Loading leaderboard...</div>';
+    try{
+        const r=await fetch('/api/polymarket-leaderboard?timePeriod='+_landingLbPeriod+'&limit=10');
+        if(!r.ok){el.innerHTML='';return;}
+        const data=await r.json();_lbCache[ckey]={data,ts:now};
+        el.innerHTML=buildLandingLb(data);
+    }catch(e){el.innerHTML='';}
+}
+function buildLandingLb(data){
+    if(!data||!data.length)return'';
+    const tog='<div class="lb-toggle"><button class="'+(_landingLbPeriod==='WEEK'?'active':'')+'" onclick="loadLandingLeaderboard(\'WEEK\')">Week</button><button class="'+(_landingLbPeriod==='MONTH'?'active':'')+'" onclick="loadLandingLeaderboard(\'MONTH\')">Month</button><button class="'+(_landingLbPeriod==='ALL'?'active':'')+'" onclick="loadLandingLeaderboard(\'ALL\')">All Time</button></div>';
+    return'<h3>Top Traders</h3>'+tog+'<table class="lb-table"><thead><tr><th>#</th><th>Trader</th><th style="text-align:right;">PNL</th></tr></thead><tbody>'+renderLbRows(data,10)+'</tbody></table>';
+}
+
+// NEWS — sorted newest→oldest
+function parseAge(age){if(!age)return 9999;const s=age.toLowerCase();const m=s.match(/(\d+)/);if(!m)return 9999;const n=parseInt(m[1]);if(s.includes('min'))return n;if(s.includes('hour'))return n*60;if(s.includes('day'))return n*1440;if(s.includes('week'))return n*10080;return 9999;}
+function renderCardNews(slug){
+    if(!slug)return'';const c=newsCache[slug];
+    if(c?.news){if(!c.news.length)return'';
+        const sorted=[...c.news].sort((a,b)=>parseAge(a.age)-parseAge(b.age));
+        return sorted.map(n=>'<div class="card-news-item"><a href="'+escA(n.url)+'" target="_blank" onclick="event.stopPropagation()">'+esc(n.title)+(n.source?' <span style="color:var(--text-3);font-size:0.7rem;"> — '+esc(n.source)+'</span>':'')+'</a>'+(n.age?' <span class="age">'+esc(n.age)+'</span>':'')+'</div>').join('');}
+    return'<div class="card-news-loading">Loading news...</div>';
+}
+async function prefetchNews(idx){for(let i=idx;i<Math.min(idx+3,filteredMarkets.length);i++){const m=filteredMarkets[i];if(!m||!m._slug||newsCache[m._slug])continue;fetchNews(m._slug,m._rawQuestion,i);}}
+async function fetchNews(slug,q,idx){
+    if(newsCache[slug])return;
+    try{const r=await fetch('/api/polymarket-news',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});newsCache[slug]=r.ok?{news:(await r.json()).news||[],ts:Date.now()}:{news:[],ts:Date.now()};}catch(e){newsCache[slug]={news:[],ts:Date.now()};}
+    if(idx===currentIndex){const s=document.getElementById('newsSlot_'+idx);if(s)s.innerHTML=renderCardNews(slug);}
+}
+
+// BRAVE IMAGE SEARCH — better photos for celebrity/awards markets
+async function prefetchImages(idx){if(!useBraveImages)return;for(let i=idx;i<Math.min(idx+3,filteredMarkets.length);i++){const m=filteredMarkets[i];if(!m||imageCache[m._slug])continue;fetchBraveImage(m._slug,m._rawQuestion,i);}}
+async function fetchBraveImage(slug,q,idx){
+    if(!slug||imageCache[slug])return;
+    try{const r=await fetch('/api/polymarket-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})});if(r.ok){const d=await r.json();imageCache[slug]={url:d.images?.[0]?.url||'',ts:Date.now()};}else{imageCache[slug]={url:'',ts:Date.now()};}}catch(e){imageCache[slug]={url:'',ts:Date.now()};}
+    if(idx===currentIndex){const m=filteredMarkets[idx];if(m&&imageCache[slug]?.url){const el=document.querySelector('#activeCard .card-image');if(el)el.src=imageCache[slug].url;else if(!m._image){const card=document.getElementById('activeCard');if(card){const img=document.createElement('img');img.className='card-image';img.src=imageCache[slug].url;img.alt='';img.onerror=function(){this.style.display='none';};card.insertBefore(img,card.firstChild);}}}}
+}
+function getCardImage(m){if(useBraveImages&&imageCache[m._slug]?.url)return imageCache[m._slug].url;return m._image||'';}
+
+// SWIPE GESTURES — SwipeBase-quality mechanics
+// tap=fullcard, horizontal swipe only (left=skip, right=save), down=scroll card body
+let _swipeListenersAttached=false;
+function setupSwipeGestures(){
+    const cc=document.getElementById('cardContainer');
+    if(!cc||_swipeListenersAttached)return;
+    _swipeListenersAttached=true;
+
+    let sx=0,sy=0,cx=0,cy=0;
+    let isDragging=false,isScrolling=false,touchStartedOnScrollable=false;
+    let t0=0,tgt=null;
+
+    const isBtn=t=>t&&(t.tagName==='A'||t.tagName==='BUTTON'||t.closest('a')||t.closest('button'));
+    const isScrollableArea=t=>t&&!!t.closest('.card-body');
+
+    const start=(x,y,target)=>{
+        touchStartedOnScrollable=isScrollableArea(target);
+        t0=Date.now();tgt=target;sx=x;sy=y;cx=0;cy=0;
+        if(touchStartedOnScrollable){isScrolling=true;isDragging=false;}
+        else{isDragging=true;isScrolling=false;}
+        const c=document.getElementById('activeCard');
+        if(c&&!touchStartedOnScrollable)c.style.transition='none';
+    };
+    const move=(x,y)=>{
+        cx=x-sx;cy=y-sy;
+        const absX=Math.abs(cx),absY=Math.abs(cy);
+        // If started on scrollable and moving vertically, let native scroll happen
+        if(touchStartedOnScrollable&&absY>absX){isScrolling=true;isDragging=false;return;}
+        // Horizontal dominance = switch to swipe mode
+        if(absX>20&&absX>absY*1.5){isDragging=true;isScrolling=false;}
+        if(!isDragging)return;
+        const c=document.getElementById('activeCard');if(!c)return;
+        c.style.transform='translateX('+cx+'px) rotate('+(cx*0.04)+'deg)';
+        c.classList.toggle('dragging-left',cx<-30);
+        c.classList.toggle('dragging-right',cx>30);
+        const hl=document.getElementById('hintLeft'),hr=document.getElementById('hintRight');
+        if(hl)hl.classList.toggle('visible',cx<-60);
+        if(hr)hr.classList.toggle('visible',cx>60);
+    };
+    const end=(ex,ey)=>{
+        const c=document.getElementById('activeCard');
+        if(c){c.style.transition='transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s ease';c.classList.remove('dragging-left','dragging-right');}
+        const dur=Date.now()-t0;
+        const tx=ex!==undefined?ex-sx:cx,ty=ey!==undefined?ey-sy:cy;
+        const tm=Math.sqrt(tx*tx+ty*ty);
+        // TAP: short + small movement
+        if(dur<250&&tm<10&&!isBtn(tgt)&&!tgt.closest('.card-image')&&!tgt.closest('.card-head')){openFullCard();}
+        // SWIPE: horizontal only (no down swipe — that's for scrolling)
+        else if(isDragging){
+            if(cx<-100)doSwipe('left');
+            else if(cx>100)doSwipe('right');
+            else if(c)c.style.transform='';
+        }
+        document.querySelectorAll('.swipe-hint').forEach(h=>h.classList.remove('visible'));
+        isDragging=false;isScrolling=false;touchStartedOnScrollable=false;tgt=null;cx=0;cy=0;
+    };
+
+    cc.addEventListener('mousedown',e=>start(e.clientX,e.clientY,e.target));
+    cc.addEventListener('mousemove',e=>{if(isDragging)move(e.clientX,e.clientY);});
+    cc.addEventListener('mouseup',e=>end(e.clientX,e.clientY));
+    cc.addEventListener('mouseleave',()=>{if(isDragging)end();});
+    cc.addEventListener('touchstart',e=>start(e.touches[0].clientX,e.touches[0].clientY,e.target),{passive:true});
+    cc.addEventListener('touchmove',e=>{move(e.touches[0].clientX,e.touches[0].clientY);if(isDragging&&Math.abs(cx)>20)e.preventDefault();},{passive:false});
+    cc.addEventListener('touchend',e=>{const t=e.changedTouches[0];end(t.clientX,t.clientY);});
+}
+// SWIPE ACTIONS — no down swipe gesture (button only for watchlist with exit-down animation)
+let swipeHistory=[];
+function doSwipe(dir){
+    const c=document.getElementById('activeCard');if(!c&&dir!=='down')return;
+    const m=filteredMarkets[currentIndex];if(!m)return;
+    const dec=dir==='right'?'interested':dir==='down'?'watch':'skip';
+    recordDecision(m,dec);
+    if(dir==='down'){
+        addToWatchlist(m);
+        if(c)c.classList.add('exit-down');
+        const wb=document.querySelector('.action-btn.watch:not(#undoBtn)');
+        if(wb){wb.classList.add('pulsing');setTimeout(()=>wb.classList.remove('pulsing'),300);}
+        swipeHistory.push({index:currentIndex,dir,item:m});updateUndoBtn();
+        setTimeout(()=>{currentIndex++;renderSwipeCard();prefetchNews(currentIndex);prefetchImages(currentIndex);},250);
+        return;
+    }
+    if(dir==='left')c.classList.add('exit-left');
+    else if(dir==='right'){c.classList.add('exit-right');fireConfetti();}
+    swipeHistory.push({index:currentIndex,dir,item:m});
+    updateUndoBtn();
+    const btnClass=dir==='right'?'like':'pass';
+    const btn=document.querySelector('.action-btn.'+btnClass);
+    if(btn){btn.classList.add('pulsing');setTimeout(()=>btn.classList.remove('pulsing'),300);}
+    setTimeout(()=>{currentIndex++;renderSwipeCard();prefetchNews(currentIndex);prefetchImages(currentIndex);},250);
+}
+function undoSwipe(){
+    if(!swipeHistory.length)return;
+    const last=swipeHistory.pop();
+    if(last.item&&last.item._slug){const di=swipeDecisions.findLastIndex(d=>d.slug===last.item._slug);if(di>=0){swipeDecisions.splice(di,1);saveDecisions();}}
+    currentIndex=last.index;
+    renderSwipeCard();updateUndoBtn();
+    showToast('Undo','info');
+}
+function updateUndoBtn(){const b=document.getElementById('undoBtn');if(b)b.style.opacity=swipeHistory.length?'1':'0.3';}
+
+// GRID
+function renderGrid(){applyFilters();}
+function applyFilters(){
+    const pMin=parseInt(document.getElementById('filterProbMin').value)||0,pMax=parseInt(document.getElementById('filterProbMax').value)||100;
+    const vMin=parseInt(document.getElementById('filterVolMin').value)||0,lMin=parseInt(document.getElementById('filterLiqMin').value)||0;
+    const ending=document.getElementById('filterEnding').classList.contains('active');const sort=document.getElementById('filterSort').value;
+    let d=markets.filter(m=>{const y=m._yesPrice*100;return y>=pMin&&y<=pMax&&m._rawVolume>=vMin&&m._rawLiquidity>=lMin&&(!ending||(m._daysLeft!==null&&m._daysLeft>0&&m._daysLeft<=30));});
+    d.sort((a,b)=>{switch(sort){case'volume':return(b._rawVolume||0)-(a._rawVolume||0);case'liquidity':return(b._rawLiquidity||0)-(a._rawLiquidity||0);case'prob_high':return(b._yesPrice||0)-(a._yesPrice||0);case'prob_low':return(a._yesPrice||0)-(b._yesPrice||0);case'ending':return(a._daysLeft||9999)-(b._daysLeft||9999);default:return 0;}});
+    filteredMarkets=d;
+    document.getElementById('gridBody').innerHTML=d.map((m,i)=>{const w=watchlist.some(w=>w.slug===m._slug),dc=m._daysLeft!==null&&m._daysLeft<=7?' urgent':'';return'<tr><td class="cat-cell"><span class="card-cat-pill">'+esc(m.category)+'</span></td><td class="q-cell" onclick="openGridCard('+i+')" title="'+escA(m._rawQuestion)+'">'+esc(m._rawQuestion)+'</td><td class="yes-cell">'+m.yesOdds+'%</td><td class="vol-cell">'+m.volume+'</td><td class="liq-cell">'+(m.liquidity||'-')+'</td><td class="days-cell'+dc+'">'+(m._daysLeft!==null?(m._daysLeft<=0?'Now':m._daysLeft+'d'):'-')+'</td><td class="star-cell '+(w?'active':'')+'" onclick="togWG('+i+',this)">'+(w?'\u2605':'\u2606')+'</td><td class="analyze-cell" onclick="openAnalysis('+i+')">Analyze</td></tr>';}).join('');
+    document.getElementById('gridCards').innerHTML=d.map((m,i)=>'<div class="grid-card-item" onclick="openGridCard('+i+')"><div class="gci-q">'+esc(m._rawQuestion)+'</div><div class="gci-row"><span class="card-cat-pill" style="font-size:0.6rem;padding:2px 6px;">'+esc(m.category)+'</span><span class="gci-yes">'+m.yesOdds+'% YES</span><span>'+m.volume+'</span>'+(m._daysLeft!==null&&m._daysLeft<=30?'<span>'+m._daysLeft+'d</span>':'')+'</div></div>').join('');
+}
+function openGridCard(i){currentIndex=i;openFullCard();}
+function toggleFilter(w){document.getElementById('filter'+w.charAt(0).toUpperCase()+w.slice(1)).classList.toggle('active');applyFilters();}
+function sortGrid(c){const m={question:'volume',yes:'prob_high',volume:'volume',liquidity:'liquidity',days:'ending'};document.getElementById('filterSort').value=m[c]||'volume';applyFilters();}
+
+// WATCHLIST
+function addToWatchlist(m){if(watchlist.some(w=>w.slug===m._slug))return;watchlist.push({slug:m._slug,question:m._rawQuestion,yesOdds:m.yesOdds,url:m.url,addedAt:Date.now()});saveWl();showToast('Added to watchlist','info');}
+function toggleWatch(i){const m=filteredMarkets[i];if(!m)return;const idx=watchlist.findIndex(w=>w.slug===m._slug);if(idx>=0){watchlist.splice(idx,1);showToast('Removed','info');}else{addToWatchlist(m);return;}saveWl();renderSwipeCard();}
+function togWG(i,el){const m=filteredMarkets[i];if(!m)return;const idx=watchlist.findIndex(w=>w.slug===m._slug);if(idx>=0)watchlist.splice(idx,1);else watchlist.push({slug:m._slug,question:m._rawQuestion,yesOdds:m.yesOdds,url:m.url,addedAt:Date.now()});saveWl();const w=watchlist.some(w=>w.slug===m._slug);el.textContent=w?'\u2605':'\u2606';el.className='star-cell'+(w?' active':'');}
+function saveWl(){localStorage.setItem('yn_watchlist',JSON.stringify(watchlist));updateBadge();}
+function updateBadge(){const b=document.getElementById('watchBadge');if(watchlist.length){b.style.display='inline-flex';b.textContent=watchlist.length;}else b.style.display='none';}
+function renderWatchlist(){const c=document.getElementById('watchlistContent');if(!watchlist.length){c.innerHTML='<div class="watchlist-empty"><p>No markets watched yet.</p><p>Star markets or swipe down to add them.</p></div>';return;}c.innerHTML=watchlist.map((w,i)=>'<div class="watchlist-item"><span class="wi-q" onclick="window.open(\''+escA(w.url)+'\',\'_blank\')">'+esc(w.question)+'</span><span class="wi-odds">'+w.yesOdds+'%</span><button class="wi-remove" onclick="removeW('+i+')">\u2715</button></div>').join('');}
+function removeW(i){watchlist.splice(i,1);saveWl();renderWatchlist();}
+
+// SWIPE DECISIONS (history)
+function recordDecision(m,dec){
+    swipeDecisions.push({slug:m._slug,question:m._rawQuestion,yesOdds:m.yesOdds,url:m.url,decision:dec,category:currentCategory,timestamp:Date.now()});
+    saveDecisions();
+}
+function saveDecisions(){localStorage.setItem('yn_decisions',JSON.stringify(swipeDecisions));updateHistoryBadge();}
+function updateHistoryBadge(){const b=document.getElementById('historyBadge');if(swipeDecisions.length){b.style.display='inline-flex';b.textContent=swipeDecisions.length;}else b.style.display='none';}
+function renderHistory(){
+    const c=document.getElementById('historyContent'),bar=document.getElementById('historyBar');
+    const skip=swipeDecisions.filter(d=>d.decision==='skip').length,int=swipeDecisions.filter(d=>d.decision==='interested').length,wat=swipeDecisions.filter(d=>d.decision==='watch').length;
+    bar.innerHTML=(swipeDecisions.length?'<span class="hb-stat" style="color:var(--no);">'+skip+' skipped</span><span class="hb-stat" style="color:var(--yes);">'+int+' interested</span><span class="hb-stat" style="color:var(--accent);">'+wat+' watching</span><button class="hb-export" onclick="exportHistory()">Export CSV</button><button class="hb-clear" onclick="clearHistory()">Clear</button>':'');
+    if(!swipeDecisions.length){c.innerHTML='<div class="history-empty"><p>No swipe history yet.</p><p>Start swiping to build your history.</p></div>';return;}
+    c.innerHTML=swipeDecisions.slice().reverse().map((d,i)=>{
+        const ago=formatAgo(d.timestamp);
+        return'<div class="history-item"><span class="hi-dec '+d.decision+'">'+d.decision+'</span><span class="hi-q">'+esc(d.question)+'</span><span class="hi-odds">'+d.yesOdds+'%</span><span class="hi-time">'+ago+'</span></div>';
+    }).join('');
+}
+function formatAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'now';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
+function exportHistory(){
+    if(!swipeDecisions.length){showToast('No history to export','error');return;}
+    const rows=[['question','decision','yesOdds','category','timestamp','url'].join(',')];
+    swipeDecisions.forEach(d=>{rows.push(['"'+d.question.replace(/"/g,'""')+'"',d.decision,d.yesOdds,d.category,new Date(d.timestamp).toISOString(),d.url||''].join(','));});
+    const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='yesno-history-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+    showToast('Exported '+swipeDecisions.length+' decisions','success');
+}
+function clearHistory(){if(!confirm('Clear all swipe history?'))return;swipeDecisions=[];saveDecisions();renderHistory();showToast('History cleared','info');}
+
+// ANALYSIS
+function computeBiasAnalysis(q,yo){const biases=[],ql=q.toLowerCase(),yes=parseFloat(yo);if(yes>=85||yes<=15)biases.push({name:'Anchoring',description:'Extreme odds create strong anchoring. Traders may fail to update.'});if(ql.includes('war')||ql.includes('crash')||ql.includes('pandemic')||ql.includes('crisis'))biases.push({name:'Availability Heuristic',description:'Dramatic events overweighted. Check base rates.'});if(ql.includes('will')&&(ql.includes('by')||ql.includes('before')))biases.push({name:'Ambiguity Aversion',description:'Specific deadline \u2014 resolution criteria may be less clear.'});if(yes>=40&&yes<=60)biases.push({name:'Recency Bias',description:'Toss-up \u2014 traders likely weighting recent news too heavily.'});biases.push({name:'Herding',description:yes>=70?'Strong consensus \u2014 contrarian value if you have private info.':yes<=30?'Strong NO consensus \u2014 check for groupthink.':'Split crowd \u2014 independent analysis matters most.'});return biases;}
+function computeMonteCarloOdds(yo,vol){const p=parseFloat(yo)/100,R=10000;const vf=vol>1e6?0.02:vol>1e5?0.05:0.10;let yc=0;const outs=[];for(let i=0;i<R;i++){const n=(Math.random()-0.5)*vf*2;const ap=Math.max(0.01,Math.min(0.99,p+n));const o=Math.random()<ap?1:0;outs.push(o);yc+=o;}const sp=yc/R,ev=sp*(1/p)-1,b=(1/p)-1,kelly=Math.max(0,(b*sp-(1-sp))/b);const bp=[];for(let i=0;i<R;i+=100){const bt=outs.slice(i,i+100);bp.push(bt.reduce((a,c)=>a+c,0)/bt.length);}bp.sort((a,b)=>a-b);return{simProbability:(sp*100).toFixed(1),expectedValue:(ev*100).toFixed(1),kellyFraction:(kelly*100).toFixed(1),confidenceLow:(bp[Math.floor(bp.length*0.025)]*100).toFixed(1),confidenceHigh:(bp[Math.floor(bp.length*0.975)]*100).toFixed(1),runs:R};}
+function inferResolutionCriteria(q,item){const ed=item._endDate?new Date(item._endDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'Not specified';let r='<ul style="padding-left:16px;margin:0;"><li>Resolution date: <strong>'+ed+'</strong></li>';if(item._slug)r+='<li>Source: <a href="https://polymarket.com/event/'+item._slug+'" target="_blank">Polymarket event page</a></li>';const ql=q.toLowerCase();if(ql.includes('president')||ql.includes('election'))r+='<li>Likely resolves based on official election results</li>';else if(ql.includes('price')||ql.includes('bitcoin'))r+='<li>Likely resolves based on spot price</li>';else r+='<li>Resolution criteria on Polymarket event page</li>';return r+'</ul>';}
+async function openAnalysis(i){
+    const m=filteredMarkets[i];if(!m)return;const modal=document.getElementById('analysisModal'),content=document.getElementById('analysisContent');
+    content.innerHTML='<h3>'+esc(m._rawQuestion)+'</h3><div style="text-align:center;padding:24px;color:var(--text-3);">Analyzing...</div>';modal.classList.add('open');
+    const q=m._rawQuestion,yo=(m._yesPrice*100).toFixed(0);const biases=computeBiasAnalysis(q,yo),mc=computeMonteCarloOdds(yo,m._rawVolume),res=inferResolutionCriteria(q,m);
+    let ai=null;try{const r=await fetch('/api/polymarket-analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,yesOdds:yo,volume:m._rawVolume,liquidity:m._rawLiquidity,endDate:m._endDate,slug:m._slug})});if(r.ok)ai=await r.json();}catch(e){}
+    let h='<h3>'+esc(q)+'</h3><div style="display:flex;gap:8px;margin-bottom:16px;font-size:0.8rem;color:var(--text-3);flex-wrap:wrap;"><span style="color:var(--yes);font-weight:600;">'+m.yesOdds+'% YES</span><span>'+m.volume+' vol</span>'+(m.liquidity?'<span>'+m.liquidity+' liq</span>':'')+(m._daysLeft!==null?'<span>'+m._daysLeft+'d left</span>':'')+'</div>';
+    if(ai?.analysis){const a=ai.analysis,vc=(a.verdict||'').includes('YES')?'var(--yes)':(a.verdict||'').includes('NO')?'var(--no)':'var(--text-1)';h+='<div class="poly-analysis-section"><h4>AI Analysis</h4><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:1.1rem;font-weight:700;color:'+vc+';">'+esc(a.verdict||'N/A')+'</span><span style="font-size:0.75rem;color:var(--text-3);background:var(--bg-3);padding:2px 8px;border-radius:6px;">'+esc((a.confidence||'?')+'/10')+'</span></div><p style="font-size:0.85rem;color:var(--text-2);margin-bottom:8px;">'+esc(a.summary||'')+'</p>'+(a.keyFactors?.length?'<div style="margin-bottom:8px;">'+a.keyFactors.map(f=>'<div style="font-size:0.78rem;color:var(--text-2);padding:2px 0;">\u2022 '+esc(f)+'</div>').join('')+'</div>':'')+(a.edgeAssessment?'<div style="font-size:0.8rem;padding:8px 10px;background:var(--bg-3);border-radius:8px;margin-bottom:6px;"><strong style="color:var(--yes);">Edge:</strong> <span style="color:var(--text-2);">'+esc(a.edgeAssessment)+'</span></div>':'')+(a.contrarian?'<div style="font-size:0.78rem;color:var(--text-3);font-style:italic;margin-bottom:6px;">Contrarian: '+esc(a.contrarian)+'</div>':'')+'</div>';}
+    // NEWS IMPACT — how each headline moves the market
+    if(ai?.analysis?.newsImpact?.length){h+='<div class="poly-analysis-section"><h4>News Impact Analysis</h4>';ai.analysis.newsImpact.forEach(ni=>{const dc=ni.direction==='UP'?'var(--yes)':ni.direction==='DOWN'?'var(--no)':'var(--text-3)';const arrow=ni.direction==='UP'?'\u2191':ni.direction==='DOWN'?'\u2193':'\u2194';h+='<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;"><span style="color:'+dc+';font-weight:700;font-size:0.85rem;">'+arrow+'</span><span style="font-size:0.78rem;color:var(--text-1);">'+esc(ni.headline||'')+'</span>'+(ni.magnitude?'<span style="font-size:0.7rem;color:'+dc+';background:rgba(255,255,255,0.05);padding:1px 6px;border-radius:4px;">'+esc(ni.magnitude)+'</span>':'')+'</div><div style="font-size:0.75rem;color:var(--text-3);padding-left:20px;">'+esc(ni.reasoning||'')+'</div></div>';});h+='</div>';}
+    if(ai?.news?.length){h+='<div class="poly-analysis-section"><h4>Latest News</h4><ul style="margin:0;padding-left:16px;">';ai.news.forEach(r=>{h+='<li style="margin-bottom:6px;"><a href="'+escA(r.url)+'" target="_blank" style="font-size:0.82rem;">'+esc(r.title)+'</a>'+(r.age?' <span style="font-size:0.7rem;color:var(--text-3);">('+esc(r.age)+')</span>':'')+'</li>';});h+='</ul></div>';}
+    h+='<div class="poly-analysis-section"><h4>Behavioral Bias Check</h4>';biases.forEach(b=>{h+='<div style="margin-bottom:6px;"><span class="poly-bias-tag">'+esc(b.name)+'</span> <span style="font-size:0.78rem;color:var(--text-2);">'+esc(b.description)+'</span></div>';});h+='</div>';
+    h+='<div class="poly-analysis-section"><h4>Monte Carlo ('+mc.runs.toLocaleString()+' runs)</h4><div class="poly-mc-grid"><div class="poly-mc-stat"><div class="label">Sim Prob</div><div class="value">'+mc.simProbability+'%</div></div><div class="poly-mc-stat"><div class="label">Expected Value</div><div class="value" style="color:'+(parseFloat(mc.expectedValue)>0?'var(--yes)':'var(--no)')+';">'+mc.expectedValue+'%</div></div><div class="poly-mc-stat"><div class="label">Kelly</div><div class="value">'+mc.kellyFraction+'%</div></div><div class="poly-mc-stat"><div class="label">95% CI</div><div class="value">'+mc.confidenceLow+'\u2013'+mc.confidenceHigh+'%</div></div></div></div>';
+    h+='<div class="poly-analysis-section"><h4>Resolution Criteria</h4>'+res+'</div>';
+    if(m.url)h+='<div style="text-align:center;margin-top:16px;"><a href="'+escA(m.url)+'" target="_blank" style="display:inline-block;padding:10px 24px;background:var(--yes);color:#000;border-radius:10px;font-weight:600;font-size:0.85rem;text-decoration:none;">Open on Polymarket</a></div>';
+    content.innerHTML=h;
+}
+function closeAnalysis(){document.getElementById('analysisModal').classList.remove('open');}
+
+// SHARE + DECK IMPORT
+function generateShareUrl(){if(!watchlist.length){showToast('Watchlist empty','error');return;}const u=window.location.origin+'/poly#deck='+btoa(JSON.stringify(watchlist.map(w=>w.slug).filter(Boolean)));navigator.clipboard.writeText(u).then(()=>showToast('Share URL copied!','success')).catch(()=>prompt('Share URL:',u));}
+async function loadShareDeck(encoded){
+    try{
+        const slugs=JSON.parse(atob(encoded));if(!Array.isArray(slugs)||!slugs.length)return;
+        showLoading(true);
+        const res=await fetch(`${GAMMA_BASE}/events?limit=100&closed=false&order=volume24hr&ascending=false`);
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        const all=transformPolymarketData(await res.json());
+        const deck=slugs.map(s=>all.find(m=>m._slug===s)).filter(Boolean);
+        if(!deck.length)throw new Error('No markets found from shared deck');
+        markets=deck;filteredMarkets=[...markets];currentIndex=0;currentCategory='shared';
+        showLoading(false);navigate('swipe');initBackground('shared');
+        showToast('Shared deck: '+deck.length+' markets','success');
+        renderSwipeCard();prefetchNews(0);
+    }catch(e){showLoading(false);showToast('Could not load shared deck','error');}
+}
+
+// TAG PICKER
+let pickerSelectedTags=new Set();
+function openTagPicker(){
+    const overlay=document.querySelector('.picker-overlay');if(!overlay)return;
+    const tagsEl=overlay.querySelector('.picker-tags');
+    const infoEl=overlay.querySelector('.picker-selected-info');
+    pickerSelectedTags=new Set();
+    // Build tags from categories
+    tagsEl.innerHTML=Object.entries(POLY_CATEGORIES).map(([k,c])=>{
+        return'<button class="picker-tag" data-cat="'+k+'" onclick="togglePickerTag(this,\''+k+'\')">'+c.icon+' '+esc(c.label)+'</button>';
+    }).join('');
+    infoEl.textContent='Select categories to mix';
+    overlay.classList.add('show');
+}
+function togglePickerTag(el,cat){
+    if(pickerSelectedTags.has(cat)){pickerSelectedTags.delete(cat);el.classList.remove('selected');}
+    else{pickerSelectedTags.add(cat);el.classList.add('selected');}
+    const info=document.querySelector('.picker-selected-info');
+    if(info)info.textContent=pickerSelectedTags.size?pickerSelectedTags.size+' selected':'Select categories to mix';
+}
+function closeTagPicker(){document.querySelector('.picker-overlay')?.classList.remove('show');}
+async function applyTagPicker(){
+    if(!pickerSelectedTags.size){showToast('Select at least one category','error');return;}
+    closeTagPicker();showLoading(true);
+    try{
+        const all=[];const seen=new Set();
+        for(const key of pickerSelectedTags){
+            const cat=POLY_CATEGORIES[key];if(!cat)continue;
+            const urls=cat.urls||[cat.url];if(!urls[0])continue;
+            const res=await Promise.allSettled(urls.map(u=>fetch(u).then(r=>r.json())));
+            for(const r of res){if(r.status!=='fulfilled')continue;const raw=r.value;const ev=Array.isArray(raw)?raw:raw.data||raw.events||[];for(const e of ev){if(!seen.has(e.id)){seen.add(e.id);all.push(e);}}}
+        }
+        let data=transformPolymarketData(all).filter(m=>{const y=m._yesPrice*100;return y>3&&y<97;});
+        data.sort((a,b)=>(b._rawLiquidity||0)-(a._rawLiquidity||0));
+        if(!data.length)throw new Error('No markets found');
+        markets=data;filteredMarkets=[...markets];currentIndex=0;currentCategory='trending';
+        showLoading(false);navigate('swipe');initBackground('trending');
+        showToast(data.length+' markets from '+pickerSelectedTags.size+' categories','success');
+        renderSwipeCard();prefetchNews(0);
+    }catch(e){showLoading(false);showToast('Failed: '+e.message,'error');}
+}
+
+// CONFETTI
+function fireConfetti(){const cv=document.getElementById('confettiCanvas'),ctx=cv.getContext('2d');cv.width=window.innerWidth;cv.height=window.innerHeight;const ps=[],cols=['#00d26a','#ff4757','#3b82f6','#ffa502','#8b5cf6','#fff'];for(let i=0;i<60;i++)ps.push({x:cv.width/2+(Math.random()-0.5)*200,y:cv.height/2,vx:(Math.random()-0.5)*12,vy:Math.random()*-14-4,c:cols[Math.floor(Math.random()*cols.length)],s:Math.random()*6+3,r:Math.random()*360,rs:(Math.random()-0.5)*10,l:1});let f=0;function anim(){ctx.clearRect(0,0,cv.width,cv.height);let alive=false;ps.forEach(p=>{if(p.l<=0)return;alive=true;p.x+=p.vx;p.y+=p.vy;p.vy+=0.4;p.r+=p.rs;p.l-=0.015;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r*Math.PI/180);ctx.globalAlpha=p.l;ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6);ctx.restore();});if(alive&&f++<120)requestAnimationFrame(anim);else ctx.clearRect(0,0,cv.width,cv.height);}anim();if(navigator.vibrate)navigator.vibrate(50);}
+
+// UTILS
+function showToast(msg,type='info'){const c=document.getElementById('toastContainer'),t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showLoading(s){document.getElementById('loadingOverlay').className='loading-overlay'+(s?' active':'');}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
+function escA(s){return s?String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):'';}
+
+// KEYBOARD
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='Escape'){const fc=document.getElementById('fullcardOverlay'),an=document.querySelector('.analysis-overlay.show'),pk=document.querySelector('.picker-overlay.show');if(fc?.classList.contains('show')){closeFullCard();return;}if(an){closeAnalysis();return;}if(pk){closeTagPicker();return;}if(currentView!=='landing'){navigate('landing');return;}return;}if(currentView!=='swipe')return;if(e.key==='ArrowLeft'||e.key==='h')doSwipe('left');else if(e.key==='ArrowRight'||e.key==='l')doSwipe('right');else if(e.key==='w')doSwipe('down');else if(e.key==='u'||e.key==='z')undoSwipe();else if(e.key==='a')openAnalysis(currentIndex);else if(e.key===' '){e.preventDefault();openFullCard();}});
+
+// INIT
+function init(){
+    document.getElementById('featuredSection').innerHTML='<h3>Featured Collections</h3><div class="featured-row">'+Object.entries(CURATED_COLLECTIONS).map(([k,c])=>'<div class="featured-card" onclick="loadCollection(\''+k+'\')"><div class="fc-icon">'+c.icon+'</div><div class="fc-label">'+esc(c.label)+'</div><div class="fc-desc">'+esc(c.desc)+'</div></div>').join('')+'</div>';
+    document.getElementById('categoryGrid').innerHTML=Object.entries(POLY_CATEGORIES).map(([k,c])=>'<div class="cat-tile" onclick="loadCategory(\''+k+'\')"><div class="icon">'+c.icon+'</div><div class="label">'+esc(c.label)+'</div></div>').join('');
+    loadTrending();loadLandingLeaderboard();updateBadge();updateHistoryBadge();initBackground('trending');
+    const h=window.location.hash.slice(1);
+    if(h.startsWith('deck=')){loadShareDeck(h.slice(5));}
+    else if(['swipe','grid','watchlist','history','about'].includes(h)&&(h==='about'||h==='history'||markets.length))navigate(h);
+}
+async function loadTrending(){try{const r=await fetch(`${GAMMA_BASE}/events?limit=10&closed=false&order=volume24hr&ascending=false`);if(!r.ok)return;const d=transformPolymarketData(await r.json()).filter(m=>{const y=m._yesPrice*100;return y>5&&y<95;}).slice(0,8);window._trendingPreview=d;document.getElementById('trendingTicker').innerHTML=d.map((m,i)=>'<div class="trending-item" onclick="openTrendingItem('+i+')"><div class="q">'+esc(m._rawQuestion)+'</div><div class="meta"><span class="odds">'+m.yesOdds+'% YES</span><span>'+m.volume+'</span>'+(m._priceChange!==null?'<span style="color:'+(m._priceChange>=0?'var(--yes)':'var(--no)')+';">'+(m._priceChange>=0?'+':'')+((m._priceChange*100).toFixed(1))+'%</span>':'')+'</div></div>').join('');}catch(e){document.getElementById('trendingTicker').innerHTML='<div style="padding:10px;color:var(--text-3);font-size:0.8rem;">Could not load trending</div>';}}
+function openTrendingItem(i){if(!window._trendingPreview)return;markets=[window._trendingPreview[i]];filteredMarkets=[...markets];currentIndex=0;currentCategory='trending';navigate('swipe');initBackground('trending');openFullCard();}
+init();
+</script>
+</body>
+</html>
