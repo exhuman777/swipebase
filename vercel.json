@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/swipebase-cloud.html" },
+    { "source": "/", "destination": "/swipebase.html" },
+    { "source": "/cloud", "destination": "/swipebase-cloud.html" },
     { "source": "/lite", "destination": "/swipebase.html" },
     { "source": "/docs", "destination": "/swipebase-docs.html" }
   ],
